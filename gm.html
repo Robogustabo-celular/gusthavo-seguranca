@@ -998,7 +998,7 @@ document.addEventListener('change', e => {
 });
 document.addEventListener('focusout', e => { if (e.target.dataset && e.target.dataset.p && e.target.tagName !== 'SELECT') setTimeout(() => { const ae = document.activeElement; if (!(ae && ae.dataset && ae.dataset.p)) render(); }, 60); });
 
-const gmLeitura = () => !!(window.nuvem && !nuvem.logado());
+const gmLeitura = () => /^#ver/.test(location.hash) || !!(window.nuvem && !nuvem.logado());
 const gmLinkPub = () => location.origin + location.pathname + '#ver';
 function gmShareCard(){
   if (gmLeitura()) return '';
