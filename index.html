@@ -436,7 +436,7 @@ body.pubmode #paPub{display:block}
 .dz-hsub{grid-column:1/-1;margin:2px 2px 0;font-size:13px;opacity:.8}
 @media (max-width:420px){.dz-hs{padding:10px}.dz-hs b{font-size:28px}}
 .dz-wrap{padding-top:16px}
-.dz-filtros{position:sticky;top:0;z-index:15;display:grid;grid-template-columns:minmax(180px,1.4fr) repeat(5,minmax(0,1fr));gap:8px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);padding:10px 0}
+.dz-filtros{position:sticky;top:0;z-index:15;display:grid;grid-template-columns:minmax(180px,1.4fr) repeat(5,minmax(0,1fr)) auto;gap:8px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);padding:10px 0}
 .dz-filtros input,.dz-filtros select{min-height:42px;font-size:14px;padding:8px 10px}
 @media (max-width:980px){.dz-filtros{grid-template-columns:repeat(3,minmax(0,1fr))}.dz-filtros input{grid-column:1/-1}}
 @media (max-width:560px){.dz-filtros{grid-template-columns:repeat(2,minmax(0,1fr));position:static}}
@@ -559,6 +559,11 @@ body.pubmode #paPub{display:block}
 .dz-grid .panel:not(.dz-c2):not(.dz-c3) .dz-rn small{display:inline;margin-left:6px}
 .dz-t td[data-l="Fotos"],.dz-t td[data-l="Prioridade"]{white-space:nowrap}
 .dz-mais{display:block;margin:12px auto 0;background:var(--surface2);border:1px solid var(--line);color:var(--ink);font-weight:700;border-radius:10px;padding:10px 18px;cursor:pointer}
+.dz-foco{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:8px 12px;font-weight:700;font-size:16px}
+.dz-foco span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;background:#F78300;color:#fff;border-radius:6px;padding:2px 7px}
+.dz-exp{display:flex;align-items:center;justify-content:center;gap:7px;min-height:42px;border-radius:9px;border:0;background:var(--brand);color:#fff;font:700 14px Barlow,sans-serif;padding:8px 12px;cursor:pointer;white-space:nowrap;order:10}
+.dz-exp svg{width:18px;height:18px}
+.dz-exp:hover{filter:brightness(1.15)}
 .dz-rodape{text-align:center;font-size:12px;color:var(--muted);margin:22px 0 10px}
 #dzTip{position:fixed;z-index:90;display:none;pointer-events:none;background:#14222E;color:#fff;font:600 13px/1.3 Barlow,sans-serif;padding:7px 10px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.25);max-width:260px}
 
@@ -3605,15 +3610,15 @@ async function paPdfAcao(a){
   rodapes(doc, cf);
   return doc;
 }
-async function paPdfPlano(p, comFotos){
+async function paPdfPlano(p, comFotos, o = {}){
   const {jsPDF} = window.jspdf;
   const doc = new jsPDF({unit:'mm', format:'a4'});
   const cf = await cfgPDF();
-  const l = paDoPlano(p.id).sort(paOrdena), st = paStats(l);
+  const l = (o.lista || paDoPlano(p.id)).slice().sort(paOrdena), st = paStats(l);
   const c = mkCtx(doc, cf, p.nome, COR.brand);
-  c.y = cabecalho(doc, cf, p.nome || 'Plano de ação', p.descricao || 'Plano de ação', `${st.pct}% concluído`, COR.brand, false, `Emitido em ${fmtDH(new Date())}`);
+  c.y = cabecalho(doc, cf, p.nome || 'Plano de ação', o.filtro || p.descricao || 'Plano de ação', `${st.pct}% concluído`, COR.brand, false, `Emitido em ${fmtDH(new Date())}`);
   blocos(c, [
-    {n:st.tot, l:'Ações no plano', c:COR.brand}, {n:st.ok, l:'Concluídas', c:COR.ok}, {n:st.and, l:'Em andamento', c:COR.interv},
+    {n:st.tot, l:o.lista ? 'Ações no relatório' : 'Ações no plano', c:COR.brand}, {n:st.ok, l:'Concluídas', c:COR.ok}, {n:st.and, l:'Em andamento', c:COR.interv},
     {n:st.nao, l:'Não iniciadas', c:[110,122,132]}, {n:st.imp, l:'Impeditivas em aberto', c:COR.interd}, {n:st.venc, l:'Com prazo vencido', c:COR.notif},
   ]);
   const d = doc;
@@ -3631,6 +3636,14 @@ async function paPdfPlano(p, comFotos){
     c.y += 7;
   }
   c.y += 3;
+  const porResp = new Map(); l.forEach(a => { const k = pNome(a.responsavel) || 'A definir'; if (!porResp.has(k)) porResp.set(k, []); porResp.get(k).push(a); });
+  if (porResp.size > 1){
+    secao(c, 'Avanço por responsável');
+    tabela(c, [{h:'Responsável',w:62},{h:'Empresa',w:34},{h:'Ações',w:16},{h:'Concluídas',w:22},{h:'Em andamento',w:24},{h:'Não iniciadas',w:24}],
+      [...porResp.entries()].sort((a, b) => b[1].length - a[1].length).map(([n, g]) => { const ok = g.filter(a => a.status === 'concluida').length;
+        return [{t:n, b:true}, {t:pEmp((g.find(a => pEmp(a.responsavel)) || {}).responsavel) || '-'}, {t:String(g.length)}, {t:`${ok} (${Math.round(ok / g.length * 100)}%)`, c:COR.ok, b:true}, {t:String(g.filter(a => a.status === 'andamento').length), c:COR.interv}, {t:String(g.filter(a => a.status === 'nao_iniciada').length)}]; }));
+    c.y += 2;
+  }
   const cols = [{h:'Cód.',w:13},{h:'Ação',w:66},{h:'Responsável / apoio',w:40},{h:'Prazo',w:17},{h:'Situação',w:24},{h:'Imp.',w:10},{h:'Fotos',w:12}];
   for (const k of Object.keys(PA_PR)){
     const g = l.filter(a => a.prioridade === k); if (!g.length) continue;
@@ -4087,6 +4100,7 @@ function paDashboard(p, l){
     <a class="dz-back" href="#${esc(p.link || 'plano-' + p.id)}">‹ Voltar ao plano de ação</a>
     <p class="pa-eyebrow">Dashboard do processo</p>
     <h1>${esc(p.nome || 'Plano de ação')}</h1>
+    ${dzFiltroTxt() ? `<p class="dz-foco"><span>Visão filtrada</span>${esc(dzFiltroTxt())}</p>` : ''}
     <div class="dz-hgrid">
       <div class="dz-hring">${dzRosca(fl)}</div>
       <div class="dz-hstats">
@@ -4103,6 +4117,7 @@ function paDashboard(p, l){
       <select data-dzf="emp" aria-label="Empresa">${dzOpcoes(l, dzEmp, DZ.emp, 'Empresa')}</select>
       <select data-dzf="frente" aria-label="Frente">${dzOpcoes(l, a => a.frente || 'Sem frente', DZ.frente, 'Frente')}</select>
       <select data-dzf="pr" aria-label="Prioridade"><option value="">Prioridade</option>${Object.keys(PA_PR).map(k => `<option value="${k}" ${DZ.pr === k ? 'selected' : ''}>${PA_PR[k].nome}</option>`).join('')}</select>
+      ${isDono() ? `<button class="dz-exp" data-dzx="abrir" data-id="${p.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>Exportar PDF</button>` : ''}
       <select data-dzf="st" aria-label="Situação"><option value="">Situação</option>${DZ_ST.map(s => `<option value="${s.k}" ${DZ.st === s.k ? 'selected' : ''}>${s.nome}</option>`).join('')}</select>
     </div>
     ${ativos.length || DZ.imp || DZ.q ? `<div class="dz-chips">${ativos.map(([k, t]) => `<button class="dz-chip" data-dz="${k}" data-v="${esc(DZ[k])}">${t}: <b>${esc(nomeFiltro(k, DZ[k]))}</b> ×</button>`).join('')}${DZ.imp ? `<button class="dz-chip" data-dz="imp" data-v="1">Só impeditivas ×</button>` : ''}${DZ.q ? `<button class="dz-chip" data-dz="q" data-v="">Busca: <b>${esc(DZ.q)}</b> ×</button>` : ''}<button class="dz-limpa" data-dz="limpar" data-v="1">Limpar filtros</button></div>` : ''}
@@ -4127,6 +4142,7 @@ function paDashboard(p, l){
       <section class="panel dz-c2"><h2>Evolução das conclusões <small>acumulado desde o início do plano</small></h2>${dzEvolucao(fl)}</section>
       <section class="panel"><h2>Por prioridade</h2>
         <div class="dz-prs">${Object.keys(PA_PR).map(k => { const g = lpr.filter(a => a.prioridade === k), ok = dzConta(g, 'concluida'), on = DZ.pr === k;
+          if (!g.length) return '';
           return `<button class="dz-prc ${on ? 'on' : ''} ${DZ.pr && !on ? 'off' : ''}" data-dz="pr" data-v="${k}" aria-pressed="${on}" style="--c:${PA_PR[k].cor}"><span><b>${PA_PR[k].nome}</b><small>${ok} de ${g.length} concluídas</small></span><strong>${g.length ? Math.round(ok / g.length * 100) : 0}%</strong>${dzBarra(g)}</button>`; }).join('')}</div></section>
 
       <section class="panel"><h2>Por frente</h2>${dzLinhas(porFrente, 'frente', Math.max(1, ...porFrente.map(x => x[1].length)))}</section>
@@ -4168,6 +4184,45 @@ function dzEvoInterativo(root){
   hit.addEventListener('pointermove', mover); hit.addEventListener('pointerdown', mover);
   hit.addEventListener('pointerleave', () => { cr.style.display = 'none'; cd.style.display = 'none'; dzEsconde(); });
 }
+
+function dzFiltroTxt(){
+  const t = [];
+  if (DZ.resp) t.push('Responsável: ' + DZ.resp);
+  if (DZ.emp) t.push('Empresa: ' + DZ.emp);
+  if (DZ.frente) t.push('Frente: ' + DZ.frente);
+  if (DZ.pr) t.push('Prioridade ' + PA_PR[DZ.pr].nome.toLowerCase());
+  if (DZ.st) t.push(PA_ST[DZ.st].nome);
+  if (DZ.prazo) t.push((DZ_PZ.find(z => z.k === DZ.prazo) || {nome:''}).nome);
+  if (DZ.imp) t.push('Só impeditivas');
+  if (DZ.q) t.push('Busca: ' + DZ.q);
+  return t.join(' · ');
+}
+function dzExportar(p){
+  const l = dzFiltrar(paDoPlano(p.id)), concl = l.filter(a => a.status === 'concluida');
+  const comFoto = g => g.filter(a => (a.fotosAntes || []).length || (a.fotosDepois || []).length).length;
+  F = {modo:'dzexp', pid:p.id};
+  abrirSheet('dzexp', 'Exportar relatório', `<div class="fsec">
+    <h3>${esc(p.nome)}</h3>
+    <p class="muted" style="margin:0;font-size:14px">${dzFiltroTxt() ? 'Filtro aplicado: <b>' + esc(dzFiltroTxt()) + '</b>.' : 'Sem filtro: todas as ações do plano.'} Para mudar, feche e ajuste os filtros do dashboard.</p>
+    <label class="optrow"><input type="radio" name="dzxEsc" id="dzxTodas" value="todas" checked><span><b>Todas as ações do filtro</b><br><small class="muted">${plural(l.length, 'ação', 'ações')}, com resumo, avanço por responsável e tabela completa</small></span></label>
+    <label class="optrow"><input type="radio" name="dzxEsc" id="dzxConcl" value="concl" ${concl.length ? '' : 'disabled'}><span><b>Só as concluídas</b><br><small class="muted">${plural(concl.length, 'ação concluída', 'ações concluídas')}${concl.length ? `, ${comFoto(concl)} com fotos de evidência` : ''}</small></span></label>
+    <label class="optrow"><input type="checkbox" id="dzxFotos" ${comFoto(l) ? 'checked' : 'disabled'}><span><b>Incluir evidências de antes e depois</b><br><small class="muted">Uma página por ação, com o que foi feito e as fotos lado a lado</small></span></label>
+  </div>`, `<button class="btn pri block" data-dzx="gerar" data-id="${p.id}">${icoPDF()} Gerar PDF</button>`);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-dzx]'); if (!b) return;
+  const p = PA.planos.find(x => x.id === b.dataset.id); if (!p) return;
+  if (b.dataset.dzx === 'abrir'){ dzExportar(p); return; }
+  if (b.dataset.dzx === 'gerar'){
+    const soConcl = $('#dzxConcl') && $('#dzxConcl').checked, fotos = !!($('#dzxFotos') && $('#dzxFotos').checked);
+    let l = dzFiltrar(paDoPlano(p.id)); if (soConcl) l = l.filter(a => a.status === 'concluida');
+    if (!l.length) return toast('Nenhuma ação para exportar com esse filtro.');
+    const filtro = [dzFiltroTxt(), soConcl ? 'Somente concluídas' : ''].filter(Boolean).join(' · ') || 'Todas as ações do plano';
+    const nome = nomeArq(`Relatorio_${p.nome}_${soConcl ? 'Concluidas_' : ''}${DZ.resp || DZ.emp || ''}_${hojeISO()}`).slice(0, 90) + '.pdf';
+    gerar(b, () => paPdfPlano(p, fotos, {lista:l, filtro}), nome);
+  }
+});
+document.addEventListener('change', e => { if (e.target.id === 'dzxConcl' && e.target.checked){ const f = $('#dzxFotos'); if (f && !f.disabled) f.checked = true; } });
 
 /* cliques e filtros do dashboard */
 document.addEventListener('click', e => {
