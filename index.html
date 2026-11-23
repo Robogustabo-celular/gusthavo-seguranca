@@ -4490,21 +4490,24 @@ function ciPdfCartaz(){
   doc.setTextColor(247, 131, 0); doc.text('REGISTRE.', 16 + doc.getTextWidth('VIU UM RISCO? '), 60);
   doc.setTextColor(213, 227, 238); doc.setFont('helvetica', 'normal'); doc.setFontSize(12.5); doc.text('Condição insegura, ato inseguro ou quase acidente. Leva 1 minuto.', 16, 70);
   for (let x = -12; x < W + 12; x += 8){ doc.setFillColor(242, 183, 5); doc.triangle(x, 78, x + 4, 78, x, 84, 'F'); doc.setFillColor(27, 39, 51); doc.triangle(x + 4, 78, x + 8, 78, x + 4, 84, 'F'); }
-  const q = ciQR(); const lado = 120, x0 = (W - lado) / 2, y0 = 96;
+  const q = ciQR(); const lado = 112, x0 = (W - lado) / 2, y0 = 94;
   doc.setDrawColor(214, 221, 226); doc.setLineWidth(0.6); doc.roundedRect(x0 - 8, y0 - 8, lado + 16, lado + 16, 5, 5, 'S');
   if (q){ const n = q.getModuleCount(), m = lado / n; doc.setFillColor(13, 56, 91);
     for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) doc.rect(x0 + x * m, y0 + y * m, m + 0.02, m + 0.02, 'F'); }
-  doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text('Aponte a câmera do celular para o QR Code', W / 2, y0 + lado + 22, {align:'center'});
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(91, 105, 117); doc.text('ou acesse: ' + CI_URL, W / 2, y0 + lado + 29, {align:'center'});
+  doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text('Aponte a câmera do celular para o QR Code', W / 2, y0 + lado + 17, {align:'center'});
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(91, 105, 117); doc.text('ou acesse: ' + CI_URL, W / 2, y0 + lado + 24, {align:'center'});
   const passos = [['1', 'Abra o formulário', 'pelo QR Code ou link'], ['2', 'Descreva o risco', 'local, horário e foto'], ['3', 'Envie', 'a Segurança trata']];
-  const pw = 56, py = y0 + lado + 38;
+  const pw = 56, py = y0 + lado + 31;
   passos.forEach(([n, t, s], i) => { const px = 16 + i * (pw + 5);
     doc.setFillColor(244, 246, 248); doc.roundedRect(px, py, pw, 24, 3, 3, 'F');
     doc.setFillColor(247, 131, 0); doc.circle(px + 9, py + 12, 5, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(n, px + 9, py + 13.8, {align:'center'});
     doc.setTextColor(27, 39, 51); doc.setFontSize(11.5); doc.text(t, px + 17, py + 10.5); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(91, 105, 117); doc.text(s, px + 17, py + 16.5); });
+  doc.setFillColor(13, 56, 91); doc.rect(0, H - 34, W, 16, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.text('Dúvidas e questões de segurança: Gusthavo · Segurança do Trabalho', W / 2, H - 27.5, {align:'center'});
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.text('(94) 9272-0416', W / 2, H - 21, {align:'center'});
   doc.setFillColor(198, 47, 40); doc.rect(0, H - 18, W, 18, 'F');
   doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5);
-  doc.text('EMERGÊNCIA: SECOM 0800 285 0193 · RÁDIO FAIXA 03', W / 2, H - 7.5, {align:'center'});
+  doc.text('EMERGÊNCIA: CECOM 0800 285 0193 · RÁDIO FAIXA 03', W / 2, H - 7.5, {align:'center'});
   return doc;
 }
 function ciPdfRegistro(r){
