@@ -4354,7 +4354,7 @@ boot();
 const CI = {lista:[], ok:false, erro:'', f:{st:'abertas', pot:'todos', q:''}};
 const CI_URL = location.origin + location.pathname.replace(/[^/]*$/, '') + 'condicao.html';
 const CI_POT = {
-  fatalidade:{n:'Fatalidade', c:'#6E0B0B'}, vida:{n:'Vida alterada', c:'#C62F28'}, afastamento:{n:'Lesão com afastamento', c:'#D9571A'},
+  fatalidade:{n:'Fatalidade', c:'#6E0B0B'}, vida:{n:'Vida mudada', c:'#C62F28'}, afastamento:{n:'Lesão com afastamento', c:'#D9571A'},
   leve:{n:'Lesão leve', c:'#C77F00'}, material:{n:'Dano material', c:'#1F6FB2'}, ambiental:{n:'Desvio ambiental', c:'#2E8B57'}, outro:{n:'Outro', c:'#5B6975'}
 };
 const CI_TIPO = {condicao:'Condição insegura', ato:'Ato inseguro', quase:'Quase acidente'};
@@ -4433,7 +4433,7 @@ function viewCondicoes(){
   <div class="filters">
     <div class="seg" role="group" aria-label="Situação">${segB('abertas','Abertas')}${segB('nova','Novas')}${segB('tratativa','Em tratativa')}${segB('encerrada','Encerradas')}${segB('todas','Todas')}</div>
     <div class="ci-filtro">
-      <select id="ciPot" aria-label="Consequência potencial"><option value="todos">Todas as consequências</option><option value="alto" ${f.pot === 'alto' ? 'selected' : ''}>Alto potencial (fatalidade e vida alterada)</option>${Object.entries(CI_POT).map(([k, p]) => `<option value="${k}" ${f.pot === k ? 'selected' : ''}>${p.n}</option>`).join('')}</select>
+      <select id="ciPot" aria-label="Consequência potencial"><option value="todos">Todas as consequências</option><option value="alto" ${f.pot === 'alto' ? 'selected' : ''}>Alto potencial (fatalidade e vida mudada)</option>${Object.entries(CI_POT).map(([k, p]) => `<option value="${k}" ${f.pot === k ? 'selected' : ''}>${p.n}</option>`).join('')}</select>
       <input id="ciBusca" type="search" placeholder="Buscar local, empresa, protocolo…" value="${esc(f.q)}">
     </div>
   </div>
