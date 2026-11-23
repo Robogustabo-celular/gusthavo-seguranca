@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0D385B">
+<meta property="og:title" content="Registrar condição insegura · Segurança do Trabalho">
+<meta property="og:description" content="Viu um risco na área? Registre em 1 minuto. Sua informação evita acidentes.">
+<title>Registrar condição insegura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0F2;--surface:#fff;--surface2:#F4F6F8;--ink:#1B2733;--muted:#5B6975;--line:#D6DDE2;
+  --brand:#0D385B;--hi:#F2B705;--accent:#F78300;--erro:#C62F28;--ok:#2E8B57;
+  --p-fatal:#6E0B0B;--p-vida:#C62F28;--p-afast:#D9571A;--p-leve:#C77F00;--p-mat:#1F6FB2;--p-amb:#2E8B57;--p-out:#5B6975;
+  font-family:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+.top{background:var(--brand);color:#fff;padding:18px max(16px,env(safe-area-inset-left)) 26px;position:relative}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:7px;background:repeating-linear-gradient(135deg,#1B2733 0 10px,var(--hi) 10px 20px)}
+.wrap{max-width:620px;margin:0 auto}
+.marca{display:flex;align-items:center;gap:12px}
+.marca .lg{background:#fff;border-radius:10px;padding:6px 10px;display:inline-flex}
+.marca img{height:34px;display:block}
+.marca span{font-size:13px;line-height:1.2;color:#C9DAE8}
+h1{font-family:"Barlow Condensed",sans-serif;font-size:34px;line-height:1.05;margin:18px 0 6px;text-wrap:balance}
+.top p{margin:0;color:#D5E3EE;max-width:46ch}
+main{padding:16px max(16px,env(safe-area-inset-left)) 120px}
+.sec{background:var(--surface);border-radius:16px;padding:16px;margin-bottom:12px;display:grid;gap:14px}
+.sec h2{margin:0;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);display:flex;gap:8px;align-items:center}
+.sec h2 i{font-style:normal;background:var(--brand);color:#fff;border-radius:999px;width:22px;height:22px;display:grid;place-items:center;font-size:12px;letter-spacing:0}
+label.f{display:grid;gap:6px;font-weight:600;font-size:15px}
+label.f small{font-weight:400;color:var(--muted);font-size:13px}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--surface2);border:1.5px solid var(--line);border-radius:10px;padding:12px;width:100%}
+textarea{min-height:96px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);background:#fff}
+.dupla{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opcoes{display:grid;gap:8px}
+.opcoes.tres{grid-template-columns:repeat(3,1fr)}
+.op{position:relative}
+.op input{position:absolute;opacity:0;pointer-events:none}
+.op>span{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:52px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface2);font-weight:600;font-size:15px;line-height:1.2;cursor:pointer}
+.op>span small{font-weight:400;font-size:12.5px;color:var(--muted)}
+.opcoes.tres .op>span{text-align:center;align-items:center;font-size:14px}
+.op input:checked+span{border-color:var(--brand);background:#E6EEF5;box-shadow:inset 0 0 0 1px var(--brand)}
+.op input:focus-visible+span{outline:3px solid var(--accent);outline-offset:2px}
+.pot .op>span{flex-direction:row;align-items:center;justify-content:flex-start;gap:12px}
+.pot .op>span::before{content:"";flex:0 0 14px;height:14px;border-radius:4px;background:var(--c)}
+.pot .op input:checked+span{border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,#fff);box-shadow:inset 0 0 0 1px var(--c)}
+.pot .op>span>span{display:flex;flex-direction:column;gap:2px}
+.pot .op span b{display:block}
+.pot .op>span>span small{font-weight:400;font-size:12.5px;color:var(--muted)}
+.sw{display:flex;align-items:center;gap:12px;font-weight:600;font-size:15px;cursor:pointer}
+.sw input{width:22px;height:22px;accent-color:var(--brand);flex:0 0 22px}
+.sw small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.fotos{display:flex;gap:8px;flex-wrap:wrap}
+.fotos figure{margin:0;position:relative;width:88px;height:88px;border-radius:10px;overflow:hidden;background:var(--surface2)}
+.fotos img{width:100%;height:100%;object-fit:cover}
+.fotos button{position:absolute;top:4px;right:4px;border:0;border-radius:999px;width:26px;height:26px;background:rgba(0,0,0,.65);color:#fff;font-size:16px;line-height:1;cursor:pointer}
+.addfoto{width:88px;height:88px;border:1.5px dashed var(--line);border-radius:10px;display:grid;place-items:center;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;background:var(--surface2)}
+.addfoto svg{width:24px;height:24px;display:block;margin:0 auto 4px}
+.err{color:var(--erro);font-size:13px;font-weight:600}
+.oculto{display:none!important}
+.barra{position:fixed;left:0;right:0;bottom:0;background:rgba(237,240,242,.94);backdrop-filter:blur(6px);padding:12px max(16px,env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.btn{font:inherit;font-weight:700;font-size:17px;border:0;border-radius:12px;padding:15px;width:100%;background:var(--accent);color:#fff;cursor:pointer}
+.btn:disabled{opacity:.6}
+.btn.sec2{background:var(--brand)}
+.btn:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.ok{text-align:center;padding:30px 18px}
+.ok .sel{width:76px;height:76px;border-radius:999px;background:var(--ok);display:grid;place-items:center;margin:10px auto 16px}
+.ok .sel svg{width:40px;height:40px}
+.sec.ok h2{font-family:"Barlow Condensed",sans-serif;font-size:32px;margin:0 0 6px;color:var(--ink);text-transform:none;letter-spacing:0;display:block}
+.ok .proto{display:inline-block;margin:14px 0 6px;padding:10px 16px;border-radius:10px;background:var(--surface2);font-weight:700;font-size:20px;letter-spacing:.04em}
+.ok p{color:var(--muted);margin:6px auto;max-width:40ch}
+.aviso{font-size:13px;color:var(--muted);text-align:center;margin:4px 0 0}
+@media (max-width:380px){.dupla{grid-template-columns:1fr}.opcoes.tres{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){.ok .sel{animation:pop .35s ease-out}@keyframes pop{from{transform:scale(.6);opacity:0}}}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="marca"><span class="lg"><img src="logo-concremat.png" alt="Concremat"></span><span>Segurança do Trabalho<br>Britagem · Serra Norte</span></div>
+  <h1>Registrar condição insegura</h1>
+  <p>Viu um risco na área? Registre em 1 minuto. A Segurança do Trabalho recebe na hora e trata.</p>
+</div></header>
+
+<main><div class="wrap">
+<form id="form" novalidate>
+  <section class="sec">
+    <h2><i>1</i> Quem está registrando</h2>
+    <label class="sw"><input type="checkbox" id="anonimo"><span>Registrar sem me identificar<small>Seu nome não aparece no registro.</small></span></label>
+    <div id="boxNome" class="dupla">
+      <label class="f">Seu nome<input id="nome" autocomplete="name" placeholder="Nome e sobrenome"></label>
+      <label class="f">Função<input id="funcao" placeholder="Opcional"></label>
+    </div>
+    <label class="f">Empresa
+      <select id="empresa"><option value="">Selecione</option><option>Concremat</option><option>ALFE</option><option>Vale</option><option>GG Transformação Tec</option><option value="outra">Outra empresa</option></select>
+    </label>
+    <label class="f oculto" id="boxEmpOutra">Qual empresa?<input id="empresaOutra" placeholder="Nome da empresa"></label>
+  </section>
+
+  <section class="sec">
+    <h2><i>2</i> O que você encontrou</h2>
+    <div class="opcoes tres" role="radiogroup" aria-label="Tipo de registro">
+      <label class="op"><input type="radio" name="tipo" value="condicao" checked><span>Condição insegura</span></label>
+      <label class="op"><input type="radio" name="tipo" value="ato"><span>Ato inseguro</span></label>
+      <label class="op"><input type="radio" name="tipo" value="quase"><span>Quase acidente</span></label>
+    </div>
+    <div class="dupla">
+      <label class="f">Dia<input type="date" id="data"></label>
+      <label class="f">Horário<input type="time" id="hora"></label>
+    </div>
+    <label class="f">Local
+      <select id="local"><option value="">Selecione</option><option>Britador</option><option>Peneira</option><option>Pátio de estoque / pilhas</option><option>Correias transportadoras</option><option>Área de abastecimento</option><option>Acessos e vias</option><option>Oficina / manutenção</option><option>Escritório / área de vivência</option><option value="outro">Outro local</option></select>
+    </label>
+    <label class="f oculto" id="boxLocalOutro">Qual local?<input id="localOutro" placeholder="Descreva o local"></label>
+    <label class="f">O que aconteceu? <small>Descreva o que você viu: o risco, onde está e quem pode ser atingido.</small><textarea id="descricao" placeholder="Ex.: proteção da correia solta próximo ao pé da peneira, com pessoas passando ao lado."></textarea></label>
+    <div class="f" style="display:grid;gap:6px;font-weight:600;font-size:15px">Fotos <small style="font-weight:400;color:var(--muted);font-size:13px">(opcional, até 3)</small>
+      <div class="fotos" id="fotos"><label class="addfoto" id="addFoto"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Adicionar</span><input type="file" id="inFoto" accept="image/*" multiple hidden></label></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2><i>3</i> O que isso poderia causar</h2>
+    <p style="margin:-6px 0 0;color:var(--muted);font-size:14px">Escolha a pior consequência que poderia acontecer se ninguém fizer nada.</p>
+    <div class="opcoes pot" role="radiogroup" aria-label="Consequência potencial">
+      <label class="op" style="--c:var(--p-fatal)"><input type="radio" name="potencial" value="fatalidade"><span><span><b>Fatalidade</b><small>Morte de uma pessoa</small></span></span></label>
+      <label class="op" style="--c:var(--p-vida)"><input type="radio" name="potencial" value="vida"><span><span><b>Vida alterada</b><small>Lesão grave ou permanente, amputação, incapacidade</small></span></span></label>
+      <label class="op" style="--c:var(--p-afast)"><input type="radio" name="potencial" value="afastamento"><span><span><b>Lesão com afastamento</b><small>A pessoa precisaria parar de trabalhar</small></span></span></label>
+      <label class="op" style="--c:var(--p-leve)"><input type="radio" name="potencial" value="leve"><span><span><b>Lesão leve</b><small>Primeiros socorros, sem afastamento</small></span></span></label>
+      <label class="op" style="--c:var(--p-mat)"><input type="radio" name="potencial" value="material"><span><span><b>Dano material</b><small>Equipamento, veículo ou estrutura</small></span></span></label>
+      <label class="op" style="--c:var(--p-amb)"><input type="radio" name="potencial" value="ambiental"><span><span><b>Desvio ambiental</b><small>Vazamento, poeira, resíduo, contaminação</small></span></span></label>
+      <label class="op" style="--c:var(--p-out)"><input type="radio" name="potencial" value="outro"><span><span><b>Outro</b><small>Nenhuma das opções acima</small></span></span></label>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2><i>4</i> Como melhorar</h2>
+    <label class="f">O que pode ser feito para eliminar o risco?<textarea id="sugestao" placeholder="Ex.: fixar a proteção, isolar a área até o reparo, sinalizar."></textarea></label>
+    <label class="sw"><input type="checkbox" id="corrigido"><span>Já tomei uma ação na hora<small>Ex.: isolei a área, avisei o líder, parei a atividade.</small></span></label>
+    <label class="f oculto" id="boxAcao">Qual ação você tomou?<input id="acaoImediata" placeholder="Descreva a ação imediata"></label>
+  </section>
+  <p class="err oculto" id="msgErro" role="alert"></p>
+  <p class="aviso">Em caso de emergência, acione a SECOM: 0800 285 0193 ou rádio faixa 03.</p>
+</form>
+
+<section class="sec ok oculto" id="telaOk" aria-live="polite">
+  <div class="sel"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div>
+  <h2>Registro enviado</h2>
+  <p>Obrigado. A Segurança do Trabalho já recebeu e vai tratar.</p>
+  <span class="proto" id="proto"></span>
+  <p style="font-size:13px">Guarde este número de protocolo.</p>
+  <button class="btn sec2" id="btnNovo" type="button" style="margin-top:14px">Registrar outra</button>
+</section>
+</div></main>
+
+<div class="barra" id="barra"><div class="wrap"><button class="btn" id="btnEnviar" type="button">Enviar registro</button></div></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+"use strict";
+const CFG = {"apiKey":"AIzaSyBr5RUesMJBhKWOepHI6QK-PkXIIMctXeU","authDomain":"seguranca-concremat.firebaseapp.com","projectId":"seguranca-concremat","storageBucket":"seguranca-concremat.firebasestorage.app","messagingSenderId":"448785550205","appId":"1:448785550205:web:3e0b78fdef40581e8b1a14"};
+const $ = s => document.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+let fs = null;
+try { firebase.initializeApp(CFG); fs = firebase.firestore(); } catch (e) { console.error(e); }
+
+const agora = new Date();
+$('#data').value = `${agora.getFullYear()}-${pad(agora.getMonth()+1)}-${pad(agora.getDate())}`;
+$('#data').max = $('#data').value;
+$('#hora').value = `${pad(agora.getHours())}:${pad(agora.getMinutes())}`;
+try { const n = localStorage.getItem('ci.nome'); if (n) $('#nome').value = n; const em = localStorage.getItem('ci.empresa'); if (em) $('#empresa').value = em; } catch {}
+
+const mostra = (sel, on) => $(sel).classList.toggle('oculto', !on);
+$('#anonimo').addEventListener('change', e => mostra('#boxNome', !e.target.checked));
+$('#empresa').addEventListener('change', e => mostra('#boxEmpOutra', e.target.value === 'outra'));
+$('#local').addEventListener('change', e => mostra('#boxLocalOutro', e.target.value === 'outro'));
+$('#corrigido').addEventListener('change', e => mostra('#boxAcao', e.target.checked));
+mostra('#boxEmpOutra', $('#empresa').value === 'outra');
+
+/* fotos: reduz para caber no registro */
+const fotos = [];
+function reduz(file){
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file); const im = new Image();
+    im.onload = () => {
+      let q = .72, max = 1100, out;
+      for (let i = 0; i < 4; i++){
+        const k = Math.min(1, max / Math.max(im.width, im.height));
+        const c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+        out = c.toDataURL('image/jpeg', q);
+        if (out.length < 230000) break; q -= .12; max -= 220;
+      }
+      URL.revokeObjectURL(url); res(out);
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('imagem')); };
+    im.src = url;
+  });
+}
+function desenhaFotos(){
+  document.querySelectorAll('#fotos figure').forEach(f => f.remove());
+  fotos.forEach((d, i) => {
+    const f = document.createElement('figure');
+    f.innerHTML = `<img src="${d}" alt="Foto ${i+1}"><button type="button" aria-label="Remover foto ${i+1}" data-i="${i}">×</button>`;
+    $('#fotos').insertBefore(f, $('#addFoto'));
+  });
+  mostra('#addFoto', fotos.length < 3);
+}
+$('#inFoto').addEventListener('change', async e => {
+  for (const file of [...e.target.files].slice(0, 3 - fotos.length)){ try { fotos.push(await reduz(file)); } catch {} }
+  e.target.value = ''; desenhaFotos();
+});
+$('#fotos').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (!b) return; fotos.splice(+b.dataset.i, 1); desenhaFotos(); });
+
+const val = id => $('#' + id).value.trim();
+const radio = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || '';
+function erro(msg, foco){ const e = $('#msgErro'); e.textContent = msg; mostra('#msgErro', true); if (foco){ const el = $(foco); el.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(() => el.focus({preventScroll:true}), 300); } }
+
+$('#btnEnviar').addEventListener('click', async () => {
+  mostra('#msgErro', false);
+  const anon = $('#anonimo').checked;
+  const empresa = $('#empresa').value === 'outra' ? val('empresaOutra') : $('#empresa').value;
+  const local = $('#local').value === 'outro' ? val('localOutro') : $('#local').value;
+  if (!anon && !val('nome')) return erro('Informe seu nome ou marque "Registrar sem me identificar".', '#nome');
+  if (!empresa) return erro('Selecione a empresa.', '#empresa');
+  if (!val('data') || !val('hora')) return erro('Informe o dia e o horário.', '#data');
+  if (!local) return erro('Informe o local.', '#local');
+  if (val('descricao').length < 8) return erro('Descreva o que aconteceu.', '#descricao');
+  if (!radio('potencial')) return erro('Escolha o que isso poderia causar.', 'input[name="potencial"]');
+  if (!fs) return erro('Sem conexão com o sistema. Verifique a internet e tente de novo.');
+  const d = new Date();
+  const proto = `RCI-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const reg = {
+    protocolo: proto, status: 'nova', tipo: radio('tipo'), potencial: radio('potencial'),
+    anonimo: anon, nome: anon ? '' : val('nome'), funcao: anon ? '' : val('funcao'), empresa,
+    data: val('data'), hora: val('hora'), local, descricao: val('descricao'), sugestao: val('sugestao'),
+    acaoImediata: $('#corrigido').checked ? (val('acaoImediata') || 'Sim') : '',
+    fotos: fotos.slice(0, 3), criadoEm: Date.now()
+  };
+  const b = $('#btnEnviar'); b.disabled = true; b.textContent = 'Enviando…';
+  try {
+    await Promise.race([fs.collection('condicoes').doc(Date.now().toString(36) + Math.random().toString(36).slice(2, 8)).set(reg), new Promise((_, r) => setTimeout(() => r(new Error('tempo')), 20000))]);
+    try { if (!anon) localStorage.setItem('ci.nome', reg.nome); localStorage.setItem('ci.empresa', $('#empresa').value); } catch {}
+    $('#proto').textContent = proto;
+    mostra('#form', false); mostra('#barra', false); mostra('#telaOk', true); window.scrollTo(0, 0);
+  } catch (e) {
+    console.error(e);
+    erro(e && e.code === 'permission-denied' ? 'O sistema ainda não está liberado para receber registros. Avise a Segurança do Trabalho.' : 'Não foi possível enviar. Verifique a internet e tente de novo.');
+  } finally { b.disabled = false; b.textContent = 'Enviar registro'; }
+});
+$('#btnNovo').addEventListener('click', () => {
+  ['descricao','sugestao','acaoImediata','localOutro'].forEach(id => $('#' + id).value = '');
+  fotos.length = 0; desenhaFotos(); $('#corrigido').checked = false; mostra('#boxAcao', false);
+  document.querySelectorAll('input[name="potencial"]').forEach(r => r.checked = false);
+  const n = new Date(); $('#hora').value = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+  mostra('#telaOk', false); mostra('#form', true); mostra('#barra', true); window.scrollTo(0, 0);
+});
+</script>
+</body>
+</html>

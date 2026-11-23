@@ -20,6 +20,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <style>
 :root{
   --bg:#EDF0F2;--surface:#FFFFFF;--surface2:#F4F6F8;--ink:#1B2733;--muted:#5B6975;--line:#D6DDE2;
@@ -1169,6 +1170,7 @@ async function boot(){
   }, e => { toast('Não foi possível carregar os registros (' + e.code + '). Recarregue a página.'); });
   db.doc('config/geral').onSnapshot(s => { S.cfg = s.exists ? clone(s.data()) : null; render(); }, () => {});
   db.collection('planos').onSnapshot(sn => { PA.planos = sn.docs.map(d => Object.assign({id:d.id}, clone(d.data()))); PA.okP = true; render(); refreshSheet(); }, () => { PA.okP = true; render(); });
+  if (typeof ciAssinar === 'function') ciAssinar(db);
   db.collection('planoAcoes').onSnapshot(sn => { PA.acoes = sn.docs.map(d => Object.assign({id:d.id}, clone(d.data()))); PA.okA = true; render(); refreshSheet(); }, () => { PA.okA = true; render(); });
   render();
 }
@@ -1354,6 +1356,7 @@ function render(){
   if (UI.tab === 'painel') v.innerHTML = viewPainel();
   else if (UI.tab === 'registros') v.innerHTML = viewRegistros();
   else if (UI.tab === 'pendencias') v.innerHTML = viewPendencias();
+  else if (UI.tab === 'condicoes') v.innerHTML = viewCondicoes();
   else if (UI.tab === 'planos') v.innerHTML = S.db ? viewPlanos() : '<div class="empty"><b>Planos indisponíveis</b>Os planos de ação precisam da conexão com a nuvem do app.</div>';
   else v.innerHTML = viewAjustes();
   hidratar(v);
@@ -1486,6 +1489,7 @@ function viewPainel(){
   </section>
 
   <button class="pa-link" data-tab="planos" style="margin-top:14px"><span style="width:40px;height:40px;flex:0 0 40px;border-radius:10px;background:repeating-linear-gradient(135deg,#1B2733 0 6px,var(--hi) 6px 12px)"></span><span style="flex:1"><b style="display:block;font-family:'Barlow Condensed',sans-serif;font-size:20px">Planos de ação</b><span class="muted" style="font-size:14px">${plural(PA.planos.length,'plano','planos')}, ${plural(PA.acoes.filter(a => a.status !== 'concluida').length,'ação aberta','ações abertas')}</span></span><span aria-hidden="true" style="font-size:22px;color:var(--muted)">›</span></button>
+  ${typeof ciPainelCard === 'function' ? ciPainelCard() : ''}
 
   <div class="actions">
     <button class="btn pri" data-act="exportar-painel">${icoPDF()} Exportar período</button>
@@ -4318,5 +4322,271 @@ document.addEventListener('change', async e => {
 
 boot();
 </script>
+<style>
+/* ===== Condições inseguras ===== */
+.ci-hero{background:var(--brand);color:#fff;border-radius:var(--radius-lg);padding:16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;position:relative;overflow:hidden}
+.ci-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:repeating-linear-gradient(135deg,#1B2733 0 9px,var(--hi) 9px 18px)}
+.ci-hero h2{margin:0;font-family:"Barlow Condensed",sans-serif;font-size:26px;line-height:1.05}
+.ci-hero p{margin:4px 0 10px;color:#D5E3EE;font-size:14px}
+.ci-hero .lk{display:block;font-size:13px;word-break:break-all;background:rgba(255,255,255,.12);border-radius:8px;padding:7px 9px;color:#fff;text-decoration:none;user-select:all}
+.ci-qr{background:#fff;border-radius:12px;padding:8px;width:132px;height:132px;margin-bottom:6px}
+.ci-qr svg{width:100%;height:100%;display:block}
+.ci-acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.ci-acts .btn{flex:1 1 150px;text-decoration:none}
+.ci-kpis{grid-template-columns:repeat(4,1fr)}
+.ci-item{border-left:5px solid var(--pc,var(--line))}
+.ci-pot{background:color-mix(in srgb,var(--pc) 14%,transparent);color:var(--pc)}
+.chip.ci-nova{background:var(--accent);color:#fff}
+.chip.ci-tratativa{background:color-mix(in srgb,var(--interv) 14%,transparent);color:var(--interv)}
+.chip.ci-encerrada{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.ci-thumb{width:54px;height:54px;border-radius:8px;object-fit:cover;background:var(--surface2)}
+.ci-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.ci-fotos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block}
+.ci-txt{background:var(--surface2);border-radius:var(--radius);padding:10px 12px;white-space:pre-wrap;line-height:1.4}
+.ci-lbl{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+.ci-filtro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.ci-badge{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;margin-left:6px}
+@media (max-width:520px){.ci-hero{grid-template-columns:1fr}.ci-qr{width:150px;height:150px}.ci-kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+<script>
+"use strict";
+/* ================= Condições inseguras (registro público por QR Code) ================= */
+const CI = {lista:[], ok:false, erro:'', f:{st:'abertas', pot:'todos', q:''}};
+const CI_URL = location.origin + location.pathname.replace(/[^/]*$/, '') + 'condicao.html';
+const CI_POT = {
+  fatalidade:{n:'Fatalidade', c:'#6E0B0B'}, vida:{n:'Vida alterada', c:'#C62F28'}, afastamento:{n:'Lesão com afastamento', c:'#D9571A'},
+  leve:{n:'Lesão leve', c:'#C77F00'}, material:{n:'Dano material', c:'#1F6FB2'}, ambiental:{n:'Desvio ambiental', c:'#2E8B57'}, outro:{n:'Outro', c:'#5B6975'}
+};
+const CI_TIPO = {condicao:'Condição insegura', ato:'Ato inseguro', quase:'Quase acidente'};
+const CI_ST = {nova:'Nova', tratativa:'Em tratativa', encerrada:'Encerrada'};
+const ciPot = r => CI_POT[r.potencial] || CI_POT.outro;
+const ciAlto = r => r.potencial === 'fatalidade' || r.potencial === 'vida';
+const ciAutor = r => r.anonimo ? 'Anônimo' : (r.nome || '-');
+
+function ciAssinar(db){
+  if (CI.sub) return; CI.sub = true;
+  db.collection('condicoes').onSnapshot(sn => {
+    CI.lista = sn.docs.map(d => Object.assign({id:d.id}, clone(d.data()))).sort((a, b) => (b.criadoEm || 0) - (a.criadoEm || 0));
+    CI.ok = true; CI.erro = ''; if (typeof render === 'function') render();
+  }, e => { CI.ok = true; CI.erro = (e && e.code) || 'erro'; if (typeof render === 'function') render(); });
+}
+function ciQR(){
+  if (!window.qrcode) return null;
+  const q = qrcode(0, 'M'); q.addData(CI_URL); q.make(); return q;
+}
+function ciQRsvg(){
+  const q = ciQR(); if (!q) return '<span class="muted" style="font-size:12px">QR Code indisponível</span>';
+  const n = q.getModuleCount(); let d = '';
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) d += `M${x} ${y}h1v1h-1z`;
+  return `<svg viewBox="-2 -2 ${n + 4} ${n + 4}" role="img" aria-label="QR Code do formulário"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#0D385B"/></svg>`;
+}
+function ciPainelCard(){
+  const novas = CI.lista.filter(r => (r.status || 'nova') === 'nova').length;
+  const abertas = CI.lista.filter(r => r.status !== 'encerrada').length;
+  return `<button class="pa-link" data-tab="condicoes" style="margin-top:10px"><span style="width:40px;height:40px;flex:0 0 40px;border-radius:10px;background:var(--accent);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><span style="flex:1"><b style="display:block;font-family:'Barlow Condensed',sans-serif;font-size:20px">Condições inseguras${novas ? `<span class="ci-badge">${novas}</span>` : ''}</b><span class="muted" style="font-size:14px">${CI.ok ? `${plural(novas,'nova','novas')}, ${plural(abertas,'em aberto','em aberto')} · QR Code para o campo` : 'Carregando…'}</span></span><span aria-hidden="true" style="font-size:22px;color:var(--muted)">›</span></button>`;
+}
+function ciFiltrados(){
+  const f = CI.f, q = f.q.trim().toLowerCase();
+  return CI.lista.filter(r => {
+    const st = r.status || 'nova';
+    if (f.st === 'abertas' && st === 'encerrada') return false;
+    if (f.st !== 'abertas' && f.st !== 'todas' && st !== f.st) return false;
+    if (f.pot === 'alto' && !ciAlto(r)) return false;
+    if (f.pot !== 'todos' && f.pot !== 'alto' && r.potencial !== f.pot) return false;
+    if (q && ![r.protocolo, r.descricao, r.local, r.empresa, r.nome, r.sugestao].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+function ciItem(r){
+  const p = ciPot(r), st = r.status || 'nova';
+  const desc = (r.descricao || '').length > 140 ? r.descricao.slice(0, 137) + '…' : (r.descricao || '');
+  return `<button class="item ci-item" style="--pc:${p.c}" data-ciact="abrir" data-id="${esc(r.id)}">
+    <span><span class="line1"><span class="chip ci-${st}">${CI_ST[st]}</span><span class="chip ci-pot" style="--pc:${p.c}">${esc(p.n)}</span><span class="chip">${esc(CI_TIPO[r.tipo] || 'Condição insegura')}</span></span>
+    <strong>${esc(desc)}</strong>
+    <span class="meta">${esc(r.local || '-')} · ${esc(r.empresa || '-')} · ${fmtData(r.data)} ${esc(r.hora || '')}<br>${esc(ciAutor(r))} · ${esc(r.protocolo || '')}${r.responsavel ? ' · Resp.: ' + esc(r.responsavel) : ''}</span></span>
+    ${r.fotos && r.fotos.length ? `<img class="ci-thumb" src="${esc(r.fotos[0])}" alt="">` : '<span></span>'}
+  </button>`;
+}
+function viewCondicoes(){
+  const L = CI.lista, cnt = s => L.filter(r => (r.status || 'nova') === s).length;
+  const l = ciFiltrados(), f = CI.f;
+  const segB = (k, t) => `<button type="button" aria-pressed="${f.st === k}" data-ciact="st" data-v="${k}">${t}</button>`;
+  return `<button class="btn" data-tab="painel" style="margin-bottom:12px">‹ Painel</button>
+  <section class="ci-hero">
+    <div style="min-width:0"><h2>Registro de condição insegura</h2>
+      <p>O pessoal do campo abre pelo QR Code ou pelo link, registra o risco e você recebe aqui na hora.</p>
+      <a class="lk" href="${esc(CI_URL)}" target="_blank" rel="noopener">${esc(CI_URL)}</a></div>
+    <div><div class="ci-qr">${ciQRsvg()}</div></div>
+  </section>
+  <div class="ci-acts">
+    <button class="btn pri" data-ciact="copiar">Copiar link</button>
+    <button class="btn" data-ciact="cartaz">${icoPDF()} Cartaz com QR Code</button>
+    <a class="btn" href="${esc(CI_URL)}" target="_blank" rel="noopener">Abrir formulário</a>
+    ${L.length ? `<button class="btn" data-ciact="relatorio">${icoPDF()} Relatório</button>` : ''}
+  </div>
+  <div class="kpis ci-kpis" style="margin:0 0 12px">
+    <div class="kpi" style="--c:var(--accent)"><b>${cnt('nova')}</b><span>Novas</span></div>
+    <div class="kpi" style="--c:var(--interv)"><b>${cnt('tratativa')}</b><span>Em tratativa</span></div>
+    <div class="kpi" style="--c:var(--ok)"><b>${cnt('encerrada')}</b><span>Encerradas</span></div>
+    <div class="kpi" style="--c:var(--interd)"><b>${L.filter(ciAlto).length}</b><span>Alto potencial</span></div>
+  </div>
+  <div class="filters">
+    <div class="seg" role="group" aria-label="Situação">${segB('abertas','Abertas')}${segB('nova','Novas')}${segB('tratativa','Em tratativa')}${segB('encerrada','Encerradas')}${segB('todas','Todas')}</div>
+    <div class="ci-filtro">
+      <select id="ciPot" aria-label="Consequência potencial"><option value="todos">Todas as consequências</option><option value="alto" ${f.pot === 'alto' ? 'selected' : ''}>Alto potencial (fatalidade e vida alterada)</option>${Object.entries(CI_POT).map(([k, p]) => `<option value="${k}" ${f.pot === k ? 'selected' : ''}>${p.n}</option>`).join('')}</select>
+      <input id="ciBusca" type="search" placeholder="Buscar local, empresa, protocolo…" value="${esc(f.q)}">
+    </div>
+  </div>
+  ${CI.erro ? `<div class="empty"><b>Não foi possível carregar os registros</b>Confira se a regra do Firebase para "condicoes" foi publicada (${esc(CI.erro)}).</div>` :
+    !CI.ok ? '<div class="loading">Carregando…</div>' :
+    !L.length ? '<div class="empty"><b>Nenhum registro ainda</b>Imprima o cartaz com o QR Code e coloque nas frentes de serviço. Os registros aparecem aqui assim que forem enviados.</div>' :
+    !l.length ? '<div class="empty"><b>Nada neste filtro</b>Mude a situação ou a consequência para ver outros registros.</div>' :
+    `<div class="list">${l.map(ciItem).join('')}</div>`}`;
+}
+function ciDetalhe(id){
+  const r = CI.lista.find(x => x.id === id); if (!r) return;
+  const p = ciPot(r), st = r.status || 'nova';
+  SHEET = {tipo:'cidet', id, aberto: SHEET && SHEET.tipo === 'cidet' && SHEET.id === id ? 'cidet' : null};
+  const corpo = `<div class="line1" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px"><span class="chip ci-${st}">${CI_ST[st]}</span><span class="chip ci-pot" style="--pc:${p.c}">${esc(p.n)}</span><span class="chip">${esc(CI_TIPO[r.tipo] || '')}</span></div>
+    ${kv([['Data e hora', fmtData(r.data) + ' ' + (r.hora || '')], ['Local', r.local], ['Empresa', r.empresa], ['Registrado por', ciAutor(r) + (r.funcao ? ' · ' + r.funcao : '')], ['Enviado em', r.criadoEm ? fmtDH(new Date(r.criadoEm)) : '-'], ['Protocolo', r.protocolo]])}
+    <div class="ci-lbl">O que aconteceu</div><div class="ci-txt">${esc(r.descricao || '-')}</div>
+    <div class="ci-lbl">Sugestão de melhoria</div><div class="ci-txt">${esc(r.sugestao || '-')}</div>
+    ${r.acaoImediata ? `<div class="ci-lbl">Ação imediata tomada</div><div class="ci-txt">${esc(r.acaoImediata)}</div>` : ''}
+    ${r.fotos && r.fotos.length ? `<div class="ci-lbl">Fotos</div><div class="ci-fotos">${r.fotos.map((f, i) => `<a href="${esc(f)}" target="_blank" rel="noopener"><img src="${esc(f)}" alt="Foto ${i + 1}"></a>`).join('')}</div>` : ''}
+    <div class="ci-lbl" style="color:var(--accent)">Tratativa da Segurança</div>
+    <div style="display:grid;gap:12px">
+      <label class="f">Situação<select id="ciSt">${Object.entries(CI_ST).map(([k, t]) => `<option value="${k}" ${st === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px">
+        <label class="f">Responsável<input id="ciResp" value="${esc(r.responsavel || '')}" placeholder="Quem vai tratar"></label>
+        <label class="f">Prazo<input id="ciPrazo" type="date" value="${esc(r.prazo || '')}"></label>
+      </div>
+      <label class="f">Ação / tratativa<textarea id="ciTrat" rows="3" placeholder="O que foi ou será feito para eliminar o risco">${esc(r.tratativa || '')}</textarea></label>
+      ${r.encerradaEm ? `<p class="muted" style="margin:0;font-size:13px">Encerrada em ${fmtDH(new Date(r.encerradaEm))}</p>` : ''}
+      <button class="btn danger block" data-ciact="excluir" data-id="${esc(r.id)}">Excluir registro</button>
+    </div>`;
+  abrirSheet('cidet', r.protocolo || 'Condição insegura', corpo,
+    `<div class="actions" style="margin:0"><button class="btn" data-ciact="pdf" data-id="${esc(r.id)}">${icoPDF()} PDF</button><button class="btn pri" data-ciact="salvar" data-id="${esc(r.id)}">Salvar tratativa</button></div>`);
+}
+
+/* ---------- PDFs ---------- */
+function ciCab(doc, titulo, sub){
+  const W = doc.internal.pageSize.getWidth();
+  doc.setFillColor(13, 56, 91); doc.rect(0, 0, W, 30, 'F');
+  doc.setFillColor(255, 255, 255); doc.roundedRect(10, 6, 40, 18, 2, 2, 'F');
+  try { doc.addImage(LOGO_PADRAO, 'PNG', 12, 7.5, 36, 15, undefined, 'FAST'); } catch {}
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text(titulo, 56, 15);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(201, 218, 232); doc.text(sub, 56, 21.5);
+  for (let x = -10; x < W + 10; x += 6){ doc.setFillColor(242, 183, 5); doc.triangle(x, 30, x + 3, 30, x + 1, 33, 'F'); }
+  doc.setFillColor(27, 39, 51); doc.rect(0, 30, W, 0.01, 'F');
+}
+function ciPdfCartaz(){
+  const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4'});
+  const W = 210, H = 297;
+  doc.setFillColor(13, 56, 91); doc.rect(0, 0, W, 78, 'F');
+  doc.setFillColor(255, 255, 255); doc.roundedRect(16, 14, 54, 26, 3, 3, 'F');
+  try { doc.addImage(LOGO_PADRAO, 'PNG', 19, 16, 48, 22, undefined, 'FAST'); } catch {}
+  doc.setTextColor(247, 166, 74); doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text('SEGURANÇA DO TRABALHO', W - 16, 24, {align:'right'});
+  doc.setTextColor(255, 255, 255); doc.setFontSize(34); doc.text('VIU UM RISCO?', 16, 60);
+  doc.setTextColor(247, 131, 0); doc.text('REGISTRE.', 16 + doc.getTextWidth('VIU UM RISCO? '), 60);
+  doc.setTextColor(213, 227, 238); doc.setFont('helvetica', 'normal'); doc.setFontSize(12.5); doc.text('Condição insegura, ato inseguro ou quase acidente. Leva 1 minuto.', 16, 70);
+  for (let x = -12; x < W + 12; x += 8){ doc.setFillColor(242, 183, 5); doc.triangle(x, 78, x + 4, 78, x, 84, 'F'); doc.setFillColor(27, 39, 51); doc.triangle(x + 4, 78, x + 8, 78, x + 4, 84, 'F'); }
+  const q = ciQR(); const lado = 120, x0 = (W - lado) / 2, y0 = 96;
+  doc.setDrawColor(214, 221, 226); doc.setLineWidth(0.6); doc.roundedRect(x0 - 8, y0 - 8, lado + 16, lado + 16, 5, 5, 'S');
+  if (q){ const n = q.getModuleCount(), m = lado / n; doc.setFillColor(13, 56, 91);
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) doc.rect(x0 + x * m, y0 + y * m, m + 0.02, m + 0.02, 'F'); }
+  doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text('Aponte a câmera do celular para o QR Code', W / 2, y0 + lado + 22, {align:'center'});
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(91, 105, 117); doc.text('ou acesse: ' + CI_URL, W / 2, y0 + lado + 29, {align:'center'});
+  const passos = [['1', 'Abra o formulário', 'pelo QR Code ou link'], ['2', 'Descreva o risco', 'local, horário e foto'], ['3', 'Envie', 'a Segurança trata']];
+  const pw = 56, py = y0 + lado + 38;
+  passos.forEach(([n, t, s], i) => { const px = 16 + i * (pw + 5);
+    doc.setFillColor(244, 246, 248); doc.roundedRect(px, py, pw, 24, 3, 3, 'F');
+    doc.setFillColor(247, 131, 0); doc.circle(px + 9, py + 12, 5, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(n, px + 9, py + 13.8, {align:'center'});
+    doc.setTextColor(27, 39, 51); doc.setFontSize(11.5); doc.text(t, px + 17, py + 10.5); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(91, 105, 117); doc.text(s, px + 17, py + 16.5); });
+  doc.setFillColor(198, 47, 40); doc.rect(0, H - 18, W, 18, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5);
+  doc.text('EMERGÊNCIA: SECOM 0800 285 0193 · RÁDIO FAIXA 03', W / 2, H - 7.5, {align:'center'});
+  return doc;
+}
+function ciPdfRegistro(r){
+  const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4'});
+  const W = 210, M = 14; let y = 42;
+  ciCab(doc, 'Registro de condição insegura', `${r.protocolo || ''} · ${CI_TIPO[r.tipo] || ''}`);
+  const p = ciPot(r); const rgb = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  doc.setFillColor(...rgb(p.c)); doc.roundedRect(M, y - 6, 62, 9, 2, 2, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text('Potencial: ' + p.n, M + 3, y); doc.setTextColor(27, 39, 51); doc.text('Situação: ' + CI_ST[r.status || 'nova'], W - M, y, {align:'right'}); y += 10;
+  const campos = [['Data e hora', fmtData(r.data) + ' ' + (r.hora || '')], ['Local', r.local], ['Empresa', r.empresa], ['Registrado por', ciAutor(r) + (r.funcao ? ' · ' + r.funcao : '')], ['Responsável', r.responsavel || '-'], ['Prazo', r.prazo ? fmtData(r.prazo) : '-']];
+  campos.forEach(([l, v], i) => { const cx = M + (i % 2) * 91, cy = y + Math.floor(i / 2) * 13;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(91, 105, 117); doc.text(l.toUpperCase(), cx, cy);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(27, 39, 51); doc.text(doc.splitTextToSize(String(v || '-'), 86)[0], cx, cy + 5.5); });
+  y += 42;
+  const bloco = (t, txt) => { if (!txt) return; if (y > 260){ doc.addPage(); y = 20; }
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(247, 131, 0); doc.text(t.toUpperCase(), M, y); y += 5;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(27, 39, 51);
+    const ls = doc.splitTextToSize(txt, W - 2 * M); ls.forEach(l => { if (y > 280){ doc.addPage(); y = 20; } doc.text(l, M, y); y += 5; }); y += 4; };
+  bloco('O que aconteceu', r.descricao); bloco('Sugestão de melhoria', r.sugestao); bloco('Ação imediata', r.acaoImediata); bloco('Tratativa da Segurança', r.tratativa);
+  (r.fotos || []).forEach((f, i) => { try { const pr = doc.getImageProperties(f); const k = pr.height / pr.width; let w = 85, h = w * k; if (h > 110){ h = 110; w = h / k; }
+    if (i % 2 === 0 && y + h > 285){ doc.addPage(); y = 20; }
+    doc.addImage(f, 'JPEG', M + (i % 2) * 97, y, w, h); if (i % 2 === 1 || i === r.fotos.length - 1) y += h + 6; } catch {} });
+  return doc;
+}
+function ciPdfRelatorio(lista){
+  const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4', orientation:'landscape'});
+  const W = 297, M = 12; let y = 44;
+  ciCab(doc, 'Condições inseguras registradas', `${plural(lista.length, 'registro')} · gerado em ${fmtDH(new Date())}`);
+  const cols = [['Protocolo', 34], ['Data', 22], ['Local', 38], ['Empresa', 30], ['Potencial', 32], ['Descrição', 89], ['Situação', 26]];
+  const head = () => { let x = M; doc.setFillColor(13, 56, 91); doc.rect(M, y - 5, W - 2 * M, 7, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+    cols.forEach(([t, w]) => { doc.text(t, x + 2, y); x += w; }); y += 6; };
+  head();
+  lista.forEach((r, i) => {
+    const desc = doc.splitTextToSize(r.descricao || '', 85).slice(0, 3); const h = Math.max(7, desc.length * 4 + 3);
+    if (y + h > 200){ doc.addPage(); y = 20; head(); }
+    if (i % 2){ doc.setFillColor(244, 246, 248); doc.rect(M, y - 4, W - 2 * M, h, 'F'); }
+    let x = M; doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(27, 39, 51);
+    const vals = [r.protocolo, fmtData(r.data), r.local, r.empresa, ciPot(r).n, desc, CI_ST[r.status || 'nova']];
+    vals.forEach((v, k) => { if (Array.isArray(v)) v.forEach((l, j) => doc.text(l, x + 2, y + j * 4)); else doc.text(doc.splitTextToSize(String(v || '-'), cols[k][1] - 3)[0], x + 2, y); x += cols[k][1]; });
+    y += h;
+  });
+  return doc;
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-ciact]'); if (!b) return;
+  const d = b.dataset;
+  switch (d.ciact){
+    case 'st': CI.f.st = d.v; render(); return;
+    case 'abrir': ciDetalhe(d.id); return;
+    case 'copiar':
+      try { await navigator.clipboard.writeText(CI_URL); toast('Link copiado. Pode mandar no grupo.'); } catch { toast(CI_URL); }
+      return;
+    case 'cartaz': gerar(b, async () => ciPdfCartaz(), 'Cartaz_QR_Condicao_Insegura.pdf'); return;
+    case 'relatorio': { const l = ciFiltrados(); if (!l.length) return toast('Nenhum registro neste filtro.'); gerar(b, async () => ciPdfRelatorio(l), nomeArq('Condicoes_inseguras_' + hojeISO()) + '.pdf'); return; }
+    case 'pdf': { const r = CI.lista.find(x => x.id === d.id); if (r) gerar(b, async () => ciPdfRegistro(r), nomeArq(r.protocolo || 'Condicao_insegura') + '.pdf'); return; }
+    case 'salvar': {
+      const r = CI.lista.find(x => x.id === d.id); if (!r) return;
+      const novo = clone(r); delete novo.id;
+      novo.status = $('#ciSt').value; novo.responsavel = $('#ciResp').value.trim(); novo.prazo = $('#ciPrazo').value; novo.tratativa = $('#ciTrat').value.trim();
+      if (novo.status === 'encerrada' && !novo.tratativa) return toast('Descreva a tratativa antes de encerrar.');
+      novo.encerradaEm = novo.status === 'encerrada' ? (r.encerradaEm || Date.now()) : null;
+      novo.atualizadoEm = Date.now();
+      b.disabled = true;
+      try { await S.db.doc('condicoes/' + r.id).set(novo); fecharSheet(); toast('Tratativa salva.'); }
+      catch { toast('Não foi possível salvar. Tente de novo.'); }
+      finally { b.disabled = false; }
+      return;
+    }
+    case 'excluir': {
+      const r = CI.lista.find(x => x.id === d.id); if (!r) return;
+      if (!(await confirmar(`Excluir o registro ${r.protocolo || ''}? Isso não pode ser desfeito.`))) return;
+      try { await S.db.doc('condicoes/' + r.id).delete(); fecharSheet(); toast('Registro excluído.'); } catch { toast('Não foi possível excluir.'); }
+      return;
+    }
+  }
+});
+document.addEventListener('change', e => { if (e.target.id === 'ciPot'){ CI.f.pot = e.target.value; render(); } });
+document.addEventListener('input', e => { if (e.target.id === 'ciBusca'){ CI.f.q = e.target.value; render(); } });
+if (S.db) ciAssinar(S.db);
+</script>
+
 </body>
 </html>
