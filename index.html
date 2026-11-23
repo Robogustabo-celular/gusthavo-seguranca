@@ -4420,7 +4420,8 @@ function viewCondicoes(){
   </section>
   <div class="ci-acts">
     <button class="btn pri" data-ciact="copiar">Copiar link</button>
-    <button class="btn" data-ciact="cartaz">${icoPDF()} Cartaz com QR Code</button>
+    <button class="btn" data-ciact="cartaz">${icoPDF()} Cartaz em pé</button>
+    <button class="btn" data-ciact="cartazh">${icoPDF()} Cartaz deitado</button>
     <a class="btn" href="${esc(CI_URL)}" target="_blank" rel="noopener">Abrir formulário</a>
     ${L.length ? `<button class="btn" data-ciact="relatorio">${icoPDF()} Relatório</button>` : ''}
   </div>
@@ -4510,6 +4511,44 @@ function ciPdfCartaz(){
   doc.text('EMERGÊNCIA: CECOM 0800 285 0193 · RÁDIO FAIXA 03', W / 2, H - 7.5, {align:'center'});
   return doc;
 }
+function ciPdfCartazH(){
+  const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4', orientation:'landscape'});
+  const W = 297, H = 210, L = 168;
+  /* painel azul à esquerda */
+  doc.setFillColor(13, 56, 91); doc.rect(0, 0, L, H, 'F');
+  doc.setFillColor(20, 70, 110); doc.circle(L - 10, 30, 46, 'F'); doc.setFillColor(13, 56, 91); doc.circle(L - 10, 30, 34, 'F');
+  doc.setFillColor(255, 255, 255); doc.roundedRect(16, 16, 50, 24, 3, 3, 'F');
+  try { doc.addImage(LOGO_PADRAO, 'PNG', 19, 18, 44, 20, undefined, 'FAST'); } catch {}
+  doc.setTextColor(247, 166, 74); doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.text('SEGURANÇA DO TRABALHO · BRITAGEM SERRA NORTE', 16, 54);
+  doc.setTextColor(255, 255, 255); doc.setFontSize(40); doc.text('VIU UM RISCO?', 16, 74);
+  doc.setTextColor(247, 131, 0); doc.text('REGISTRE.', 16, 91);
+  doc.setTextColor(213, 227, 238); doc.setFont('helvetica', 'normal'); doc.setFontSize(12.5);
+  doc.text(['Condição insegura, ato inseguro ou quase acidente.', 'Leva 1 minuto e a Segurança do Trabalho trata.'], 16, 102);
+  const passos = [['1', 'Aponte a câmera para o QR Code', 'ou acesse o link ao lado'], ['2', 'Descreva o risco', 'local, horário, foto e o que poderia causar'], ['3', 'Envie', 'você recebe um número de protocolo']];
+  passos.forEach(([n, t, sub], i) => { const y = 120 + i * 15;
+    doc.setFillColor(247, 131, 0); doc.circle(22, y, 5, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(n, 22, y + 1.6, {align:'center'});
+    doc.setFontSize(12.5); doc.text(t, 31, y - 0.5); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(185, 205, 224); doc.text(sub, 31, y + 4.5); });
+  doc.setDrawColor(60, 100, 135); doc.setLineWidth(0.3); doc.line(16, 166, L - 16, 166);
+  doc.setTextColor(185, 205, 224); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.text('Dúvidas e questões de segurança: Gusthavo · Segurança do Trabalho', 16, 173);
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text('(94) 9272-0416', 16, 180.5);
+  /* QR à direita */
+  doc.setFillColor(237, 240, 242); doc.rect(L, 0, W - L, H, 'F');
+  const lado = 92, x0 = L + (W - L - lado) / 2, y0 = 30;
+  doc.setFillColor(255, 255, 255); doc.roundedRect(x0 - 8, y0 - 8, lado + 16, lado + 16, 5, 5, 'F');
+  doc.setFillColor(247, 131, 0); doc.roundedRect(x0 - 8, y0 - 8, 14, 3, 1, 1, 'F'); doc.roundedRect(x0 + lado - 6, y0 + lado + 5, 14, 3, 1, 1, 'F');
+  const q = ciQR(); if (q){ const n = q.getModuleCount(), m = lado / n; doc.setFillColor(13, 56, 91);
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) doc.rect(x0 + x * m, y0 + y * m, m + 0.02, m + 0.02, 'F'); }
+  const cx = L + (W - L) / 2;
+  doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text('Aponte a câmera do celular', cx, y0 + lado + 22, {align:'center'});
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(91, 105, 117);
+  doc.text(doc.splitTextToSize(CI_URL, W - L - 20), cx, y0 + lado + 29, {align:'center'});
+  /* faixas de emergência */
+  for (let x = -12; x < W + 12; x += 8){ doc.setFillColor(242, 183, 5); doc.triangle(x, 188, x + 4, 188, x, 192, 'F'); doc.setFillColor(27, 39, 51); doc.triangle(x + 4, 188, x + 8, 188, x + 4, 192, 'F'); }
+  doc.setFillColor(198, 47, 40); doc.rect(0, 192, W, 18, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+  doc.text('EMERGÊNCIA: CECOM 0800 285 0193 · RÁDIO FAIXA 03', W / 2, 203, {align:'center'});
+  return doc;
+}
 function ciPdfRegistro(r){
   const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4'});
   const W = 210, M = 14; let y = 42;
@@ -4563,6 +4602,7 @@ document.addEventListener('click', async e => {
       try { await navigator.clipboard.writeText(CI_URL); toast('Link copiado. Pode mandar no grupo.'); } catch { toast(CI_URL); }
       return;
     case 'cartaz': gerar(b, async () => ciPdfCartaz(), 'Cartaz_QR_Condicao_Insegura.pdf'); return;
+    case 'cartazh': gerar(b, async () => ciPdfCartazH(), 'Cartaz_QR_Condicao_Insegura_horizontal.pdf'); return;
     case 'relatorio': { const l = ciFiltrados(); if (!l.length) return toast('Nenhum registro neste filtro.'); gerar(b, async () => ciPdfRelatorio(l), nomeArq('Condicoes_inseguras_' + hojeISO()) + '.pdf'); return; }
     case 'pdf': { const r = CI.lista.find(x => x.id === d.id); if (r) gerar(b, async () => ciPdfRegistro(r), nomeArq(r.protocolo || 'Condicao_insegura') + '.pdf'); return; }
     case 'salvar': {
