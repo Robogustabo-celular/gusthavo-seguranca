@@ -277,7 +277,9 @@ textarea{min-height:92px;resize:vertical}
 .delta.up{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
 .delta.down{background:color-mix(in srgb,var(--interd) 14%,transparent);color:var(--interd)}
 /* ===== planos de ação ===== */
-.tabs .wrap{grid-template-columns:1fr 1fr auto 1fr 1fr 1fr}
+.tabs .wrap{grid-template-columns:1fr 1fr auto 1fr 1fr 1fr 1fr}
+.tab-pend{display:none}
+.tab .tl-l{display:none}
 .tab{font-size:11px}
 body.pubmode .top,body.pubmode .tabs,body.pubmode main{display:none}
 #paPub{display:none}
@@ -598,6 +600,9 @@ body.pubmode #paPub{display:block}
   .tab svg{width:20px;height:20px;color:var(--muted)}
   .tab:hover{background:var(--surface2)}
   .tab[aria-current="page"]{background:color-mix(in srgb,var(--brand) 10%,transparent);color:var(--brand)}
+  .tab-pend{display:flex}
+  .tab .tl-l{display:inline}
+  .tab .tl-c{display:none}
   .tab[aria-current="page"] svg{color:var(--brand)}
   .fab{order:-1;width:100%;height:50px;border-radius:12px;transform:none;margin:0 0 16px;display:flex;align-items:center;justify-content:center;gap:8px;font:700 15px/1 inherit}
   .fab::after{content:"Novo registro"}
@@ -635,7 +640,9 @@ body.pubmode #paPub{display:block}
   <button class="tab" data-tab="registros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/></svg>Registros</button>
   <button class="fab" data-act="novo" aria-label="Novo registro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
   <button class="tab" data-tab="planos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Planos</button>
-  <button class="tab" data-tab="pendencias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>Pendências</button>
+  <button class="tab" data-tab="condicoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg><span class="tl-l">Condições inseguras</span><span class="tl-c">Condições</span></button>
+  <button class="tab" data-tab="producao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20h20M4 20V10l5 3V10l5 3V6l6 4v10"/></svg>Produção</button>
+  <button class="tab tab-pend" data-tab="pendencias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>Pendências</button>
   <button class="tab" data-tab="ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes</button>
 </div></nav>
 <div id="sheet" role="dialog" aria-modal="true">
@@ -1171,6 +1178,7 @@ async function boot(){
   db.doc('config/geral').onSnapshot(s => { S.cfg = s.exists ? clone(s.data()) : null; render(); }, () => {});
   db.collection('planos').onSnapshot(sn => { PA.planos = sn.docs.map(d => Object.assign({id:d.id}, clone(d.data()))); PA.okP = true; render(); refreshSheet(); }, () => { PA.okP = true; render(); });
   if (typeof ciAssinar === 'function') ciAssinar(db);
+  if (typeof prAssinar === 'function') prAssinar(db);
   db.collection('planoAcoes').onSnapshot(sn => { PA.acoes = sn.docs.map(d => Object.assign({id:d.id}, clone(d.data()))); PA.okA = true; render(); refreshSheet(); }, () => { PA.okA = true; render(); });
   render();
 }
@@ -1357,6 +1365,7 @@ function render(){
   else if (UI.tab === 'registros') v.innerHTML = viewRegistros();
   else if (UI.tab === 'pendencias') v.innerHTML = viewPendencias();
   else if (UI.tab === 'condicoes') v.innerHTML = viewCondicoes();
+  else if (UI.tab === 'producao') v.innerHTML = typeof viewProducao === 'function' ? viewProducao() : '';
   else if (UI.tab === 'planos') v.innerHTML = S.db ? viewPlanos() : '<div class="empty"><b>Planos indisponíveis</b>Os planos de ação precisam da conexão com a nuvem do app.</div>';
   else v.innerHTML = viewAjustes();
   hidratar(v);
@@ -1485,11 +1494,12 @@ function viewPainel(){
   <section class="panel">
     <h2>Precisa de atenção <small>${plural(pend.length,'pendência')}</small></h2>
     ${atencao.length ? `<div class="list">${atencao.map(itemHTML).join('')}</div>` : `<div class="empty"><b>Tudo em dia</b>Nenhuma notificação, intervenção ou interdição aberta.</div>`}
-    ${pend.length > 5 ? `<button class="btn block" style="margin-top:10px" data-tab="pendencias">Ver todas as pendências</button>` : ''}
+    ${pend.length ? `<button class="btn block" style="margin-top:10px" data-tab="pendencias">Ver todas as pendências</button>` : ''}
   </section>
 
   <button class="pa-link" data-tab="planos" style="margin-top:14px"><span style="width:40px;height:40px;flex:0 0 40px;border-radius:10px;background:repeating-linear-gradient(135deg,#1B2733 0 6px,var(--hi) 6px 12px)"></span><span style="flex:1"><b style="display:block;font-family:'Barlow Condensed',sans-serif;font-size:20px">Planos de ação</b><span class="muted" style="font-size:14px">${plural(PA.planos.length,'plano','planos')}, ${plural(PA.acoes.filter(a => a.status !== 'concluida').length,'ação aberta','ações abertas')}</span></span><span aria-hidden="true" style="font-size:22px;color:var(--muted)">›</span></button>
   ${typeof ciPainelCard === 'function' ? ciPainelCard() : ''}
+  ${typeof prPainelCard === 'function' ? prPainelCard() : ''}
 
   <div class="actions">
     <button class="btn pri" data-act="exportar-painel">${icoPDF()} Exportar período</button>
@@ -4388,7 +4398,13 @@ function ciQRsvg(){
 function ciPainelCard(){
   const novas = CI.lista.filter(r => (r.status || 'nova') === 'nova').length;
   const abertas = CI.lista.filter(r => r.status !== 'encerrada').length;
-  return `<button class="pa-link" data-tab="condicoes" style="margin-top:10px"><span style="width:40px;height:40px;flex:0 0 40px;border-radius:10px;background:var(--accent);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><span style="flex:1"><b style="display:block;font-family:'Barlow Condensed',sans-serif;font-size:20px">Condições inseguras${novas ? `<span class="ci-badge">${novas}</span>` : ''}</b><span class="muted" style="font-size:14px">${CI.ok ? `${plural(novas,'nova','novas')}, ${plural(abertas,'em aberto','em aberto')} · QR Code para o campo` : 'Carregando…'}</span></span><span aria-hidden="true" style="font-size:22px;color:var(--muted)">›</span></button>`;
+  return `<button class="pa-link" data-tab="condicoes" style="margin-top:10px"><span style="width:40px;height:40px;flex:0 0 40px;border-radius:10px;background:var(--accent);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span><span style="flex:1"><b style="display:block;font-family:'Barlow Condensed',sans-serif;font-size:20px">Condições inseguras${novas ? `<span class="ci-badge">${novas}</span>` : ''}</b><span class="muted" style="font-size:14px">${CI.ok ? `${plural(novas,'nova','novas')}, ${plural(abertas,'em aberto','em aberto')} · QR Code para o campo` : 'Carregando…'}</span></span><span aria-hidden="true" style="font-size:22px;color:var(--muted)">›</span></button>${ciFeed()}`;
+}
+function ciTempo(ms){ const m = Math.round((Date.now() - ms) / 60000); if (m < 1) return 'agora'; if (m < 60) return `há ${m} min`; const h = Math.round(m / 60); if (h < 24) return `há ${h} h`; const d = Math.round(h / 24); return d === 1 ? 'ontem' : `há ${d} dias`; }
+function ciFeed(){
+  const L = CI.lista.slice(0, 3); if (!L.length) return '';
+  return `<div class="ci-feed">${L.map(r => { const p = ciPot(r); const desc = (r.descricao || '').length > 70 ? r.descricao.slice(0, 67) + '…' : (r.descricao || '');
+    return `<button type="button" style="--pc:${p.c}" data-ciact="abrir" data-id="${esc(r.id)}"><span style="flex:1;min-width:0"><b>${esc(ciAutor(r))}</b> <span>registrou ${esc(ciTempo(r.criadoEm || Date.now()))} · ${esc(p.n)}</span><br><span style="color:var(--ink)">${esc(desc)}</span></span>${(r.status || 'nova') === 'nova' ? '<span class="chip ci-nova">Nova</span>' : ''}</button>`; }).join('')}</div>`;
 }
 function ciFiltrados(){
   const f = CI.f, q = f.q.trim().toLowerCase();
@@ -4416,8 +4432,7 @@ function viewCondicoes(){
   const L = CI.lista, cnt = s => L.filter(r => (r.status || 'nova') === s).length;
   const l = ciFiltrados(), f = CI.f;
   const segB = (k, t) => `<button type="button" aria-pressed="${f.st === k}" data-ciact="st" data-v="${k}">${t}</button>`;
-  return `<button class="btn" data-tab="painel" style="margin-bottom:12px">‹ Painel</button>
-  <section class="ci-hero">
+  return `<section class="ci-hero">
     <div style="min-width:0"><h2>Registro de condição insegura</h2>
       <p>O pessoal do campo abre pelo QR Code ou pelo link, registra o risco e você recebe aqui na hora.</p>
       <a class="lk" href="${esc(CI_URL)}" target="_blank" rel="noopener">${esc(CI_URL)}</a></div>
@@ -4680,6 +4695,255 @@ document.addEventListener('click', async e => {
 document.addEventListener('change', e => { if (e.target.id === 'ciPot'){ CI.f.pot = e.target.value; render(); } });
 document.addEventListener('input', e => { if (e.target.id === 'ciBusca'){ CI.f.q = e.target.value; render(); } });
 if (S.db) ciAssinar(S.db);
+</script>
+<style>
+/* ===== Produção (diário da planta) ===== */
+.pr-mes{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.pr-mes h2{margin:0;font-family:"Barlow Condensed",sans-serif;font-size:28px;text-transform:capitalize}
+.pr-mes .iconbtn{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:20px;cursor:pointer}
+.pr-mes .iconbtn:disabled{opacity:.35;cursor:default}
+.pr-kpis{grid-template-columns:repeat(4,1fr)}
+.pr-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.pr-cal .sem{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center;padding:4px 0}
+.pr-dia{aspect-ratio:1/1.05;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:6px;display:flex;flex-direction:column;justify-content:space-between;text-align:left;cursor:pointer;min-width:0;position:relative;font:inherit;color:var(--ink)}
+.pr-dia b{font-size:15px;font-variant-numeric:tabular-nums}
+.pr-dia small{font-size:11px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-dia.op{background:color-mix(in srgb,var(--ok) 16%,var(--surface));border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.pr-dia.parcial{background:color-mix(in srgb,#E3A008 18%,var(--surface));border-color:color-mix(in srgb,#E3A008 50%,transparent)}
+.pr-dia.parada{background:color-mix(in srgb,var(--interd) 14%,var(--surface));border-color:color-mix(in srgb,var(--interd) 45%,transparent)}
+.pr-dia.hoje{box-shadow:inset 0 0 0 2px var(--brand)}
+.pr-dia.futuro{opacity:.35;cursor:default}
+.pr-dia.vazio{visibility:hidden}
+.pr-dia .ev{position:absolute;top:5px;right:6px;font-size:10px}
+.pr-leg{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+.pr-leg span::before{content:"";display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
+.pr-bar{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) auto;gap:10px;align-items:center;font-size:14px;margin:8px 0}
+.pr-bar .tr{height:12px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.pr-bar .tr i{display:block;height:100%;background:var(--interd);border-radius:99px}
+.pr-per{border:1px solid var(--line);border-radius:12px;padding:10px;display:grid;gap:8px;border-left:5px solid var(--c)}
+.pr-per .lin{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end}
+.pr-per .tg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.pr-per .tg button{font:inherit;font-size:13px;font-weight:700;border:0;padding:9px 10px;background:var(--surface);color:var(--muted);cursor:pointer}
+.pr-per .tg button[aria-pressed="true"]{background:var(--c);color:#fff}
+.pr-per input,.pr-per select{min-width:0}
+.pr-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pr-chips button{font:inherit;font-size:13.5px;font-weight:600;border:1px solid var(--line);border-radius:99px;padding:8px 12px;background:var(--surface);color:var(--ink);cursor:pointer}
+.pr-chips button[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+.pr-res{display:flex;gap:10px;flex-wrap:wrap;background:var(--surface2);border-radius:10px;padding:10px 12px;font-weight:700;font-size:14px}
+.pr-fotos{display:flex;flex-wrap:wrap;gap:8px}
+.pr-fotos figure{margin:0;position:relative;width:88px;height:88px;border-radius:10px;overflow:hidden}
+.pr-fotos img{width:100%;height:100%;object-fit:cover}
+.pr-fotos figure button{position:absolute;top:4px;right:4px;border:0;border-radius:99px;width:24px;height:24px;background:rgba(0,0,0,.65);color:#fff;cursor:pointer}
+.pr-fotos label{width:88px;height:88px;border:1.5px dashed var(--line);border-radius:10px;display:grid;place-items:center;font-size:12px;color:var(--muted);cursor:pointer;text-align:center}
+.ci-feed{display:grid;gap:8px;margin-top:10px}
+.ci-feed button{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);border-left:4px solid var(--pc);border-radius:10px;background:var(--surface);padding:9px 12px;font:inherit;color:var(--ink);cursor:pointer;width:100%}
+.ci-feed b{font-size:14px}.ci-feed span{font-size:13px;color:var(--muted)}
+@media (max-width:520px){.pr-kpis{grid-template-columns:repeat(2,1fr)}.pr-dia{padding:4px 5px;border-radius:8px}.pr-dia b{font-size:13px}.pr-dia small{font-size:9.5px}.pr-per .lin{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.pr-per .tg{grid-column:1/-1}}
+</style>
+<script>
+"use strict";
+/* ================= Produção: diário da planta a partir de novembro/2026 ================= */
+const PR = {dias:{}, ok:false, sub:false, mes:null, ed:null};
+const PR_INICIO = '2026-11';
+const PR_MOTIVOS = ['Manutenção corretiva', 'Manutenção preventiva', 'Chuva / condição climática', 'Falta de material / frente de lavra', 'Falta de equipamento de apoio', 'Falta de energia ou combustível', 'Realização de 5S / limpeza', 'DSS / treinamento', 'Aguardando liberação', 'Interdição / segurança', 'Outro'];
+const PR_ATIV = ['5S', 'DSS', 'Treinamento', 'Limpeza', 'Manutenção preventiva', 'Inspeção', 'Abastecimento'];
+const PR_MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const prHoje = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+PR.mes = prHoje().slice(0, 7) < PR_INICIO ? PR_INICIO : prHoje().slice(0, 7);
+const prMin = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : null; };
+const prDur = p => { const a = prMin(p.ini), b = prMin(p.fim); if (a == null || b == null) return 0; return ((b - a + 1440) % 1440) / 60; };
+const prHoras = h => (Math.round(h * 10) / 10).toString().replace('.', ',') + ' h';
+function prResumo(d){
+  const per = (d && d.periodos) || []; let op = 0, pa = 0; const mot = {};
+  per.forEach(p => { const h = prDur(p); if (p.tipo === 'parada'){ pa += h; const m = p.motivo || 'Outro'; mot[m] = (mot[m] || 0) + h; } else op += h; });
+  const sit = !d ? 'sem' : op > 0 && pa > 0 ? 'parcial' : op > 0 ? 'op' : pa > 0 ? 'parada' : 'sem';
+  return {op, pa, mot, sit};
+}
+const PR_SIT = {op:'Operou', parcial:'Operou com paradas', parada:'Planta parada', sem:'Sem registro'};
+function prAssinar(db){
+  if (PR.sub) return; PR.sub = true;
+  db.collection('producao').onSnapshot(sn => { PR.dias = {}; sn.docs.forEach(d => PR.dias[d.id] = clone(d.data())); PR.ok = true; if (typeof render === 'function') render(); },
+    e => { PR.ok = true; PR.erro = (e && e.code) || 'erro'; if (typeof render === 'function') render(); });
+}
+function prMesNav(delta){ let [y, m] = PR.mes.split('-').map(Number); m += delta; if (m < 1){ m = 12; y--; } if (m > 12){ m = 1; y++; } const nv = `${y}-${String(m).padStart(2, '0')}`; if (nv < PR_INICIO || nv > prHoje().slice(0, 7)) return; PR.mes = nv; render(); }
+function prDiasDoMes(mes){ const [y, m] = mes.split('-').map(Number); const n = new Date(y, m, 0).getDate(); return Array.from({length: n}, (_, i) => `${mes}-${String(i + 1).padStart(2, '0')}`); }
+function prStats(mes){
+  const hoje = prHoje(); const dias = prDiasDoMes(mes).filter(d => d <= hoje);
+  let op = 0, pa = 0, dOp = 0, dPar = 0, dParc = 0, reg = 0, ton = 0, temTon = false; const mot = {}, ativ = {};
+  dias.forEach(id => { const d = PR.dias[id]; if (!d) return; reg++; const r = prResumo(d); op += r.op; pa += r.pa;
+    if (r.sit === 'op') dOp++; else if (r.sit === 'parcial') dParc++; else if (r.sit === 'parada') dPar++;
+    Object.entries(r.mot).forEach(([k, v]) => mot[k] = (mot[k] || 0) + v); (d.atividades || []).forEach(a => ativ[a] = (ativ[a] || 0) + 1);
+    if (d.toneladas != null && d.toneladas !== ''){ ton += +d.toneladas || 0; temTon = true; } });
+  return {dias, reg, op, pa, dOp, dPar, dParc, mot, ativ, ton, temTon, disp: op + pa > 0 ? op / (op + pa) : null};
+}
+function prPainelCard(){
+  const d = PR.dias[prHoje()], r = prResumo(d);
+  const txt = !PR.ok ? 'Carregando…' : d ? `Hoje: ${PR_SIT[r.sit]}${r.op ? ' · ' + prHoras(r.op) + ' operando' : ''}${r.pa ? ' · ' + prHoras(r.pa) + ' parada' : ''}` : 'Hoje ainda não registrado';
+  return `<button class="pa-link" data-tab="producao" style="margin-top:10px"><span style="width:40px;height:40px;flex:0 0 40px;border-radius:10px;background:var(--ok);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M2 20h20M4 20V10l5 3V10l5 3V6l6 4v10"/></svg></span><span style="flex:1"><b style="display:block;font-family:'Barlow Condensed',sans-serif;font-size:20px">Produção da planta</b><span class="muted" style="font-size:14px">${esc(txt)}</span></span><span aria-hidden="true" style="font-size:22px;color:var(--muted)">›</span></button>`;
+}
+function viewProducao(){
+  const st = prStats(PR.mes), [y, m] = PR.mes.split('-').map(Number), hoje = prHoje();
+  const pri = new Date(y, m - 1, 1).getDay(), dias = prDiasDoMes(PR.mes);
+  const cel = dias.map(id => {
+    const d = PR.dias[id], r = prResumo(d), fut = id > hoje;
+    const leg = r.sit === 'sem' ? '' : r.sit === 'parada' ? 'Parada' : prHoras(r.op);
+    return `<button class="pr-dia ${fut ? 'futuro' : r.sit} ${id === hoje ? 'hoje' : ''}" ${fut ? 'disabled' : `data-pract="dia" data-id="${id}"`} aria-label="${fmtData(id)}: ${PR_SIT[r.sit]}"><b>${+id.slice(8)}</b>${d && d.fotos && d.fotos.length ? '<span class="ev">📷</span>' : ''}<small>${leg}</small></button>`;
+  }).join('');
+  const mots = Object.entries(st.mot).sort((a, b) => b[1] - a[1]); const maxM = mots.length ? mots[0][1] : 1;
+  const semReg = st.dias.length - st.reg;
+  return `<div class="pr-mes"><button class="iconbtn" data-pract="mes" data-v="-1" aria-label="Mês anterior" ${PR.mes <= PR_INICIO ? 'disabled' : ''}>‹</button><h2>${PR_MESES[m - 1]} ${y}</h2><button class="iconbtn" data-pract="mes" data-v="1" aria-label="Próximo mês" ${PR.mes >= hoje.slice(0, 7) ? 'disabled' : ''}>›</button></div>
+  <div class="kpis pr-kpis" style="margin:0 0 12px">
+    <div class="kpi" style="--c:var(--ok)"><b>${st.dOp + st.dParc}</b><span>Dias com produção</span></div>
+    <div class="kpi" style="--c:var(--ok)"><b>${prHoras(st.op)}</b><span>Planta operando</span></div>
+    <div class="kpi" style="--c:var(--interd)"><b>${prHoras(st.pa)}</b><span>Planta parada</span></div>
+    <div class="kpi" style="--c:var(--brand)"><b>${st.disp == null ? '–' : Math.round(st.disp * 100) + '%'}</b><span>Disponibilidade</span></div>
+  </div>
+  <div class="actions" style="margin:0 0 12px">
+    <button class="btn pri" data-pract="dia" data-id="${PR.mes === hoje.slice(0, 7) ? hoje : dias[dias.length - 1]}">${PR.dias[hoje] ? 'Editar o dia de hoje' : 'Registrar o dia de hoje'}</button>
+    <button class="btn" data-pract="pdf">${icoPDF()} Relatório do mês</button>
+  </div>
+  <section class="panel">
+    <h2>Calendário <small>${semReg > 0 ? plural(semReg, 'dia sem registro', 'dias sem registro') : 'todos os dias registrados'}</small></h2>
+    <div class="pr-cal">${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(s => `<span class="sem">${s}</span>`).join('')}${'<span class="pr-dia vazio"></span>'.repeat(pri)}${cel}</div>
+    <div class="pr-leg"><span style="--c:var(--ok)">Operou</span><span style="--c:#E3A008">Operou com paradas</span><span style="--c:var(--interd)">Parada</span><span style="--c:var(--line)">Sem registro</span></div>
+  </section>
+  <section class="panel" style="margin-top:12px">
+    <h2>Motivos de parada <small>horas no mês</small></h2>
+    ${mots.length ? mots.map(([k, v]) => `<div class="pr-bar"><span>${esc(k)}</span><span class="tr"><i style="width:${Math.max(4, v / maxM * 100)}%"></i></span><b>${prHoras(v)}</b></div>`).join('') : '<div class="empty" style="padding:14px"><b>Nenhuma parada registrada</b>As paradas e os motivos aparecem aqui.</div>'}
+    ${Object.keys(st.ativ).length ? `<h2 style="margin-top:14px">Atividades realizadas</h2><div class="pr-chips">${Object.entries(st.ativ).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="chip">${esc(k)} · ${plural(v, 'dia')}</span>`).join('')}</div>` : ''}
+    ${st.temTon ? `<p class="muted" style="margin:12px 0 0">Produção informada no mês: <b>${(Math.round(st.ton * 10) / 10).toLocaleString('pt-BR')} t</b></p>` : ''}
+  </section>`;
+}
+/* ---------- editor do dia ---------- */
+function prPeriodoHTML(p, i){
+  const c = p.tipo === 'parada' ? 'var(--interd)' : 'var(--ok)';
+  return `<div class="pr-per" style="--c:${c}">
+    <div class="lin">
+      <div class="tg" role="group" aria-label="Situação do período"><button type="button" aria-pressed="${p.tipo !== 'parada'}" data-pract="tipo" data-i="${i}" data-v="operando">Operando</button><button type="button" aria-pressed="${p.tipo === 'parada'}" data-pract="tipo" data-i="${i}" data-v="parada">Parada</button></div>
+      <label class="f">Das<input type="time" data-prf="ini" data-i="${i}" value="${esc(p.ini || '')}"></label>
+      <label class="f">Até<input type="time" data-prf="fim" data-i="${i}" value="${esc(p.fim || '')}"></label>
+      <button type="button" class="btn" data-pract="delper" data-i="${i}" aria-label="Remover período" style="padding:10px 12px">✕</button>
+    </div>
+    ${p.tipo === 'parada' ? `<label class="f">Motivo da parada<select data-prf="motivo" data-i="${i}"><option value="">Selecione</option>${PR_MOTIVOS.map(mo => `<option ${p.motivo === mo ? 'selected' : ''}>${esc(mo)}</option>`).join('')}</select></label>` : ''}
+    <input data-prf="obs" data-i="${i}" value="${esc(p.obs || '')}" placeholder="${p.tipo === 'parada' ? 'Detalhe da parada (opcional)' : 'Observação (opcional)'}">
+  </div>`;
+}
+const prResTxt = r => `<span style="color:var(--ok)">Operando ${prHoras(r.op)}</span><span style="color:var(--interd)">Parada ${prHoras(r.pa)}</span><span>${PR_SIT[r.sit]}</span>`;
+function prCorpo(){
+  const e = PR.ed, r = prResumo(e);
+  return `<div class="pr-res" id="prRes">${prResTxt(r)}</div>
+    <div class="ci-lbl">Períodos do dia</div>
+    <div style="display:grid;gap:8px">${e.periodos.map(prPeriodoHTML).join('') || '<p class="muted" style="margin:0">Nenhum período. Use os botões abaixo.</p>'}</div>
+    <div class="actions" style="margin:8px 0 0"><button class="btn" data-pract="addper" data-v="operando">+ Operando</button><button class="btn" data-pract="addper" data-v="parada">+ Parada</button></div>
+    <div class="actions" style="margin:6px 0 0"><button class="btn" data-pract="preset" data-v="normal" style="font-size:13px">Dia normal (07:00 às 17:00)</button><button class="btn" data-pract="preset" data-v="parado" style="font-size:13px">Dia todo parado</button></div>
+    <div class="ci-lbl">Atividades realizadas</div>
+    <div class="pr-chips">${PR_ATIV.map(a => `<button type="button" aria-pressed="${(e.atividades || []).includes(a)}" data-pract="ativ" data-v="${esc(a)}">${esc(a)}</button>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:10px;margin-top:12px">
+      <label class="f">Produção (t)<input id="prTon" type="number" inputmode="decimal" min="0" step="0.1" value="${e.toneladas == null ? '' : esc(String(e.toneladas))}" placeholder="Opcional"></label>
+      <label class="f">Equipe no dia<input id="prEquipe" value="${esc(e.equipe || '')}" placeholder="Ex.: 6 pessoas, turno A"></label>
+    </div>
+    <label class="f" style="margin-top:10px">Como foi o dia<textarea id="prObs" rows="3" placeholder="Resumo do dia, ocorrências, o que foi feito">${esc(e.obs || '')}</textarea></label>
+    <div class="ci-lbl">Evidências (fotos)</div>
+    <div class="pr-fotos">${(e.fotos || []).map((f, i) => `<figure><img src="${esc(f)}" alt="Evidência ${i + 1}"><button type="button" data-pract="delfoto" data-i="${i}" aria-label="Remover foto">×</button></figure>`).join('')}${(e.fotos || []).length < 4 ? `<label>📷<br>Adicionar<input type="file" id="prInFoto" accept="image/*" multiple hidden></label>` : ''}</div>
+    ${PR.dias[e.data] ? `<button class="btn danger block" data-pract="excluir" style="margin-top:16px">Excluir registro do dia</button>` : ''}`;
+}
+function prAbrir(id){
+  const d = PR.dias[id];
+  PR.ed = d ? Object.assign({data: id}, clone(d)) : {data: id, periodos: [], atividades: [], fotos: [], obs: '', toneladas: null, equipe: ''};
+  PR.ed.periodos = PR.ed.periodos || []; PR.ed.fotos = PR.ed.fotos || []; PR.ed.atividades = PR.ed.atividades || [];
+  SHEET = {tipo:'prdia', id};
+  abrirSheet('prdia', 'Produção · ' + fmtData(id), prCorpo(), `<div class="actions" style="margin:0"><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-pract="salvar">Salvar dia</button></div>`);
+}
+function prLerCampos(){
+  const e = PR.ed; if (!e) return;
+  document.querySelectorAll('[data-prf]').forEach(el => { const p = e.periodos[+el.dataset.i]; if (p) p[el.dataset.prf] = el.value; });
+  const t = document.getElementById('prTon'); if (t) e.toneladas = t.value === '' ? null : +t.value;
+  const q = document.getElementById('prEquipe'); if (q) e.equipe = q.value.trim();
+  const o = document.getElementById('prObs'); if (o) e.obs = o.value.trim();
+}
+function prRedesenhar(){
+  prLerCampos(); const alvo = document.getElementById('prRes'); if (!alvo) return;
+  const sb = document.querySelector('#sheet .sh-body'); const y = sb ? sb.scrollTop : 0;
+  alvo.parentElement.innerHTML = prCorpo(); if (sb) sb.scrollTop = y;
+}
+function prReduz(file){
+  return new Promise((ok, err) => { const u = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { const k = Math.min(1, 900 / Math.max(im.width, im.height)); const c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', .58)); };
+    im.onerror = () => { URL.revokeObjectURL(u); err(new Error('img')); }; im.src = u; });
+}
+function prPdfMes(mes){
+  const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4'});
+  const W = 210, M = 14, st = prStats(mes), [y, m] = mes.split('-').map(Number);
+  ciCab(doc, 'Relatório de produção da planta', `${PR_MESES[m - 1]} de ${y} · Britagem Serra Norte · gerado em ${fmtDH(new Date())}`);
+  let yy = 44;
+  const kp = [['Dias com produção', String(st.dOp + st.dParc), [46, 139, 87]], ['Planta operando', prHoras(st.op), [46, 139, 87]], ['Planta parada', prHoras(st.pa), [198, 47, 40]], ['Disponibilidade', st.disp == null ? '–' : Math.round(st.disp * 100) + '%', [13, 56, 91]]];
+  const kw = (W - 2 * M - 9) / 4;
+  kp.forEach(([l, v, c], i) => { const x = M + i * (kw + 3); doc.setFillColor(244, 246, 248); doc.roundedRect(x, yy, kw, 22, 2, 2, 'F'); doc.setFillColor(...c); doc.rect(x, yy, 1.6, 22, 'F');
+    doc.setTextColor(...c); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(v, x + 5, yy + 11); doc.setTextColor(91, 105, 117); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.text(l, x + 5, yy + 17.5); });
+  yy += 30;
+  doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  doc.text(`${plural(st.reg, 'dia registrado', 'dias registrados')} de ${st.dias.length} · ${st.dOp} sem paradas · ${st.dParc} com paradas · ${st.dPar} parados${st.temTon ? ' · produção informada: ' + (Math.round(st.ton * 10) / 10).toLocaleString('pt-BR') + ' t' : ''}`, M, yy); yy += 8;
+  const mots = Object.entries(st.mot).sort((a, b) => b[1] - a[1]);
+  if (mots.length){ doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(247, 131, 0); doc.text('MOTIVOS DE PARADA', M, yy); yy += 5; const mx = mots[0][1];
+    mots.forEach(([k, v]) => { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(27, 39, 51); doc.text(k, M, yy); doc.setFillColor(237, 240, 242); doc.roundedRect(M + 62, yy - 3, 90, 3.6, 1.5, 1.5, 'F'); doc.setFillColor(198, 47, 40); doc.roundedRect(M + 62, yy - 3, Math.max(2, 90 * v / mx), 3.6, 1.5, 1.5, 'F'); doc.setFont('helvetica', 'bold'); doc.text(prHoras(v), M + 157, yy); yy += 6; }); yy += 3; }
+  const cols = [['Dia', 18], ['Situação', 32], ['Operando', 18], ['Parada', 16], ['Motivos, atividades e observações', 98]];
+  const head = () => { let x = M; doc.setFillColor(13, 56, 91); doc.rect(M, yy - 4.5, W - 2 * M, 6.5, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); cols.forEach(([t, w]) => { doc.text(t, x + 2, yy); x += w; }); yy += 6; };
+  head();
+  st.dias.forEach((id, i) => {
+    const d = PR.dias[id], r = prResumo(d);
+    const det = d ? [Object.keys(r.mot).join(', '), (d.atividades || []).join(', '), d.obs].filter(Boolean).join(' · ') : 'Sem registro';
+    const ls = doc.splitTextToSize(det || '-', 94).slice(0, 3); const h = Math.max(6, ls.length * 3.8 + 2.4);
+    if (yy + h > 282){ doc.addPage(); yy = 18; head(); }
+    if (i % 2){ doc.setFillColor(244, 246, 248); doc.rect(M, yy - 3.8, W - 2 * M, h, 'F'); }
+    const cor = {op:[46, 139, 87], parcial:[199, 127, 0], parada:[198, 47, 40], sem:[150, 160, 168]}[r.sit];
+    doc.setFillColor(...cor); doc.rect(M, yy - 3.8, 1.2, h, 'F');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(27, 39, 51);
+    let x = M; [fmtData(id).slice(0, 5), PR_SIT[r.sit], r.op ? prHoras(r.op) : '-', r.pa ? prHoras(r.pa) : '-'].forEach((v, k) => { if (k === 1){ doc.setTextColor(...cor); doc.setFont('helvetica', 'bold'); } doc.text(v, x + 2, yy); doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'normal'); x += cols[k][1]; });
+    ls.forEach((l, j) => doc.text(l, x + 2, yy + j * 3.8)); yy += h;
+  });
+  const comFoto = st.dias.filter(id => PR.dias[id] && (PR.dias[id].fotos || []).length);
+  if (comFoto.length){ doc.addPage(); yy = 18; doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(13, 56, 91); doc.text('Evidências do mês', M, yy); yy += 7;
+    let col = 0; const fw = (W - 2 * M - 8) / 3, fh = fw * 0.75;
+    comFoto.forEach(id => (PR.dias[id].fotos || []).forEach(f => { if (yy + fh + 8 > 285){ doc.addPage(); yy = 18; col = 0; }
+      try { doc.addImage(f, 'JPEG', M + col * (fw + 4), yy, fw, fh); } catch {}
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(91, 105, 117); doc.text(fmtData(id) + ' · ' + PR_SIT[prResumo(PR.dias[id]).sit], M + col * (fw + 4), yy + fh + 4);
+      col++; if (col === 3){ col = 0; yy += fh + 9; } })); }
+  return doc;
+}
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-pract]'); if (!b) return; const d = b.dataset;
+  switch (d.pract){
+    case 'mes': prMesNav(+d.v); return;
+    case 'dia': prAbrir(d.id); return;
+    case 'pdf': gerar(b, async () => prPdfMes(PR.mes), nomeArq('Producao_planta_' + PR.mes) + '.pdf'); return;
+    case 'tipo': prLerCampos(); PR.ed.periodos[+d.i].tipo = d.v; if (d.v !== 'parada') PR.ed.periodos[+d.i].motivo = ''; prRedesenhar(); return;
+    case 'delper': prLerCampos(); PR.ed.periodos.splice(+d.i, 1); prRedesenhar(); return;
+    case 'addper': { prLerCampos(); const ult = PR.ed.periodos[PR.ed.periodos.length - 1]; PR.ed.periodos.push({tipo: d.v, ini: ult ? ult.fim : '07:00', fim: '', motivo: '', obs: ''}); prRedesenhar(); return; }
+    case 'preset': prLerCampos(); PR.ed.periodos = d.v === 'normal' ? [{tipo:'operando', ini:'07:00', fim:'17:00', motivo:'', obs:''}] : [{tipo:'parada', ini:'07:00', fim:'17:00', motivo:'', obs:''}]; prRedesenhar(); return;
+    case 'ativ': { prLerCampos(); const a = PR.ed.atividades, i = a.indexOf(d.v); if (i >= 0) a.splice(i, 1); else a.push(d.v); prRedesenhar(); return; }
+    case 'delfoto': prLerCampos(); PR.ed.fotos.splice(+d.i, 1); prRedesenhar(); return;
+    case 'salvar': {
+      prLerCampos(); const ed = PR.ed;
+      for (const p of ed.periodos){ if (!p.ini || !p.fim) return toast('Preencha o início e o fim de todos os períodos.'); if (p.tipo === 'parada' && !p.motivo) return toast('Escolha o motivo de cada parada.'); }
+      if (!ed.periodos.length && !ed.obs) return toast('Adicione pelo menos um período ou descreva o dia.');
+      const doc = clone(ed); delete doc.data; doc.atualizadoEm = Date.now();
+      b.disabled = true;
+      try { await S.db.doc('producao/' + ed.data).set(doc); fecharSheet(); toast('Dia salvo.'); } catch (err) { console.error(err); toast('Não foi possível salvar. Tente de novo.'); } finally { b.disabled = false; }
+      return;
+    }
+    case 'excluir':
+      if (!(await confirmar(`Excluir o registro de ${fmtData(PR.ed.data)}?`))) return;
+      try { await S.db.doc('producao/' + PR.ed.data).delete(); fecharSheet(); toast('Registro excluído.'); } catch { toast('Não foi possível excluir.'); }
+      return;
+  }
+});
+document.addEventListener('input', e => { if (e.target.matches('[data-prf="ini"],[data-prf="fim"]') && PR.ed){ prLerCampos(); const r = document.getElementById('prRes'); if (r) r.innerHTML = prResTxt(prResumo(PR.ed)); } });
+document.addEventListener('change', async e => {
+  if (e.target.id !== 'prInFoto' || !PR.ed) return; prLerCampos();
+  for (const f of [...e.target.files].slice(0, 4 - PR.ed.fotos.length)){ try { PR.ed.fotos.push(await prReduz(f)); } catch {} }
+  prRedesenhar();
+});
+if (S.db) prAssinar(S.db);
 </script>
 
 </body>
