@@ -4715,6 +4715,25 @@ if (S.db) ciAssinar(S.db);
 .pr-dia.futuro{opacity:.35;cursor:default}
 .pr-dia.vazio{visibility:hidden}
 .pr-dia .ev{position:absolute;top:5px;right:6px;font-size:10px}
+.pr-modos{margin-bottom:12px}
+.pr-livre{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.pr-mes h2{font-size:24px!important;text-transform:none!important}
+.pr-lista{display:grid;gap:6px}
+.pr-lin,.pr-esc{display:grid;grid-template-columns:64px minmax(0,1fr) 92px;gap:10px;align-items:center}
+.pr-lin{border:1px solid var(--line);border-left:5px solid var(--line);border-radius:10px;background:var(--surface);padding:8px 10px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;width:100%}
+.pr-lin.op{border-left-color:var(--ok)}.pr-lin.parcial{border-left-color:#E3A008}.pr-lin.parada{border-left-color:var(--interd)}
+.pr-lin.hoje{box-shadow:inset 0 0 0 2px var(--brand)}
+.pr-lin .dt{display:grid;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}.pr-lin .dt b{color:var(--ink);font-size:14px}
+.pr-lin .tl,.pr-esc .tl{position:relative;height:22px;border-radius:6px;background:var(--surface2)}
+.pr-esc{padding:0 11px 0 16px}
+.pr-esc .tl{background:none;height:16px}
+.pr-esc .tl i{position:absolute;transform:translateX(-50%);font-style:normal;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pr-lin .tl i{position:absolute;top:0;bottom:0;border-radius:4px}
+.pr-lin .tl i.op{background:var(--ok)}.pr-lin .tl i.pa{background:var(--interd)}
+.pr-lin .tl em{position:absolute;inset:0;display:flex;align-items:center;padding-left:8px;font-style:normal;font-size:12px;color:var(--muted)}
+.pr-lin .hs{display:grid;text-align:right;font-variant-numeric:tabular-nums}.pr-lin .hs b{font-size:15px;color:var(--ok)}.pr-lin .hs small{font-size:11.5px;color:var(--interd);font-weight:600}
+.pr-lin .mt{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:4px}.pr-lin .mt span{font-size:11.5px;background:color-mix(in srgb,var(--interd) 10%,transparent);color:var(--interd);border-radius:99px;padding:2px 8px;font-weight:600}
+@media (max-width:520px){.pr-lin,.pr-esc{grid-template-columns:48px minmax(0,1fr) 62px;gap:6px}.pr-lin{padding:7px 8px}.pr-esc{padding:0 9px 0 14px}.pr-modos button{padding-left:4px;padding-right:4px;font-size:12.5px}}
 .pr-leg{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
 .pr-leg span::before{content:"";display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
 .pr-bar{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,2fr) auto;gap:10px;align-items:center;font-size:14px;margin:8px 0}
@@ -4745,11 +4764,11 @@ if (S.db) ciAssinar(S.db);
 /* ================= Produção: diário da planta a partir de novembro/2026 ================= */
 const PR = {dias:{}, ok:false, sub:false, mes:null, ed:null};
 const PR_INICIO = '2026-11';
-const PR_MOTIVOS = ['Manutenção corretiva', 'Manutenção preventiva', 'Chuva / condição climática', 'Falta de material / frente de lavra', 'Falta de equipamento de apoio', 'Falta de energia ou combustível', 'Realização de 5S / limpeza', 'DSS / treinamento', 'Aguardando liberação', 'Interdição / segurança', 'Outro'];
+const PR_MOTIVOS = ['Condições climáticas (chuva)', 'Material molhado', 'Manutenção corretiva', 'Manutenção preventiva', 'Ausência de peça', 'Ausência de documentação', 'Abastecimento', 'Melhoria do canteiro', 'Realização de 5S / limpeza', 'DSS / treinamento', 'Falta de material / frente de lavra', 'Falta de equipamento de apoio', 'Falta de energia', 'Aguardando liberação', 'Interdição / segurança', 'Horário de refeição', 'Outro'];
 const PR_ATIV = ['5S', 'DSS', 'Treinamento', 'Limpeza', 'Manutenção preventiva', 'Inspeção', 'Abastecimento'];
 const PR_MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const prHoje = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
-PR.mes = prHoje().slice(0, 7) < PR_INICIO ? PR_INICIO : prHoje().slice(0, 7);
+PR.modo = 'semana'; PR.ref = prHoje(); PR.de = ''; PR.ate = '';
 const prMin = t => { const m = /^(\d{1,2}):(\d{2})$/.exec(t || ''); return m ? +m[1] * 60 + +m[2] : null; };
 const prDur = p => { const a = prMin(p.ini), b = prMin(p.fim); if (a == null || b == null) return 0; return ((b - a + 1440) % 1440) / 60; };
 const prHoras = h => (Math.round(h * 10) / 10).toString().replace('.', ',') + ' h';
@@ -4765,10 +4784,36 @@ function prAssinar(db){
   db.collection('producao').onSnapshot(sn => { PR.dias = {}; sn.docs.forEach(d => PR.dias[d.id] = clone(d.data())); PR.ok = true; if (typeof render === 'function') render(); },
     e => { PR.ok = true; PR.erro = (e && e.code) || 'erro'; if (typeof render === 'function') render(); });
 }
-function prMesNav(delta){ let [y, m] = PR.mes.split('-').map(Number); m += delta; if (m < 1){ m = 12; y--; } if (m > 12){ m = 1; y++; } const nv = `${y}-${String(m).padStart(2, '0')}`; if (nv < PR_INICIO || nv > prHoje().slice(0, 7)) return; PR.mes = nv; render(); }
-function prDiasDoMes(mes){ const [y, m] = mes.split('-').map(Number); const n = new Date(y, m, 0).getDate(); return Array.from({length: n}, (_, i) => `${mes}-${String(i + 1).padStart(2, '0')}`); }
-function prStats(mes){
-  const hoje = prHoje(); const dias = prDiasDoMes(mes).filter(d => d <= hoje);
+const prD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const prS = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const prMais = (s, n) => { const d = prD(s); d.setDate(d.getDate() + n); return prS(d); };
+const PR_MODOS = {semana:'Semana', d30:'30 dias', mes:'Mês', m2:'2 meses', livre:'Período'};
+function prIntervalo(){
+  const r = PR.ref, d = prD(r); let ini, fim;
+  if (PR.modo === 'semana'){ const dw = (d.getDay() + 6) % 7; ini = prMais(r, -dw); fim = prMais(ini, 6); }
+  else if (PR.modo === 'd30'){ fim = r; ini = prMais(r, -29); }
+  else if (PR.modo === 'mes'){ ini = r.slice(0, 8) + '01'; fim = prS(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+  else if (PR.modo === 'm2'){ ini = prS(new Date(d.getFullYear(), d.getMonth() - 1, 1)); fim = prS(new Date(d.getFullYear(), d.getMonth() + 1, 0)); }
+  else { ini = PR.de || prMais(prHoje(), -6); fim = PR.ate || prHoje(); if (fim < ini) [ini, fim] = [fim, ini]; }
+  return {ini, fim};
+}
+function prDias(ini, fim){ const out = []; let x = ini < PR_INICIO + '-01' ? PR_INICIO + '-01' : ini; const lim = fim; while (x <= lim && out.length < 400){ out.push(x); x = prMais(x, 1); } return out; }
+function prTituloPer(){ const {ini, fim} = prIntervalo(); const f = s => fmtData(s).slice(0, 5); const [y, m] = ini.split('-').map(Number);
+  if (PR.modo === 'mes') return `${PR_MESES[m - 1]} ${y}`;
+  if (PR.modo === 'm2'){ const m2 = +fim.slice(5, 7); return `${PR_MESES[m - 1]} e ${PR_MESES[m2 - 1]} ${fim.slice(0, 4)}`; }
+  return `${f(ini)} a ${fmtData(fim)}`; }
+function prNav(delta){
+  if (PR.modo === 'livre') return;
+  const d = prD(PR.ref);
+  if (PR.modo === 'semana') PR.ref = prMais(PR.ref, 7 * delta);
+  else if (PR.modo === 'd30') PR.ref = prMais(PR.ref, 30 * delta);
+  else { const k = PR.modo === 'm2' ? 2 : 1; PR.ref = prS(new Date(d.getFullYear(), d.getMonth() + k * delta, 1)); }
+  if (PR.ref > prHoje()) PR.ref = prHoje();
+  if (PR.ref < PR_INICIO + '-01') PR.ref = PR_INICIO + '-01';
+  render();
+}
+function prStatsDias(dias){
+  const hoje = prHoje(); dias = dias.filter(d => d <= hoje);
   let op = 0, pa = 0, dOp = 0, dPar = 0, dParc = 0, reg = 0, ton = 0, temTon = false; const mot = {}, ativ = {};
   dias.forEach(id => { const d = PR.dias[id]; if (!d) return; reg++; const r = prResumo(d); op += r.op; pa += r.pa;
     if (r.sit === 'op') dOp++; else if (r.sit === 'parcial') dParc++; else if (r.sit === 'parada') dPar++;
@@ -4776,42 +4821,60 @@ function prStats(mes){
     if (d.toneladas != null && d.toneladas !== ''){ ton += +d.toneladas || 0; temTon = true; } });
   return {dias, reg, op, pa, dOp, dPar, dParc, mot, ativ, ton, temTon, disp: op + pa > 0 ? op / (op + pa) : null};
 }
+function prEscala(dias){
+  let a = 6 * 60, b = 18 * 60;
+  dias.forEach(id => ((PR.dias[id] || {}).periodos || []).forEach(p => { const x = prMin(p.ini), y = prMin(p.fim); if (x != null) a = Math.min(a, x); if (y != null && y > (x || 0)) b = Math.max(b, y); }));
+  return [Math.floor(a / 60) * 60, Math.ceil(b / 60) * 60];
+}
+
 function prPainelCard(){
   const d = PR.dias[prHoje()], r = prResumo(d);
   const txt = !PR.ok ? 'Carregando…' : d ? `Hoje: ${PR_SIT[r.sit]}${r.op ? ' · ' + prHoras(r.op) + ' operando' : ''}${r.pa ? ' · ' + prHoras(r.pa) + ' parada' : ''}` : 'Hoje ainda não registrado';
   return `<button class="pa-link" data-tab="producao" style="margin-top:10px"><span style="width:40px;height:40px;flex:0 0 40px;border-radius:10px;background:var(--ok);display:grid;place-items:center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M2 20h20M4 20V10l5 3V10l5 3V6l6 4v10"/></svg></span><span style="flex:1"><b style="display:block;font-family:'Barlow Condensed',sans-serif;font-size:20px">Produção da planta</b><span class="muted" style="font-size:14px">${esc(txt)}</span></span><span aria-hidden="true" style="font-size:22px;color:var(--muted)">›</span></button>`;
 }
+function prLinhaDia(id, esc0, hoje){
+  const d = PR.dias[id], r = prResumo(d), [A, B] = esc0, tot = B - A;
+  const sem = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][prD(id).getDay()];
+  const segs = ((d && d.periodos) || []).map(p => { const x = prMin(p.ini), y = prMin(p.fim); if (x == null || y == null) return ''; const yy = y > x ? y : B; const l = Math.max(0, (x - A) / tot * 100), w = Math.max(0.6, (Math.min(B, yy) - Math.max(A, x)) / tot * 100);
+    return `<i class="${p.tipo === 'parada' ? 'pa' : 'op'}" style="left:${l}%;width:${w}%" title="${esc((p.tipo === 'parada' ? 'Parada · ' + (p.motivo || '') : 'Operando') + ' ' + p.ini + '–' + p.fim)}"></i>`; }).join('');
+  const mots = Object.keys(r.mot);
+  return `<button class="pr-lin ${r.sit} ${id === hoje ? 'hoje' : ''}" data-pract="dia" data-id="${id}">
+    <span class="dt"><b>${sem}</b>${fmtData(id).slice(0, 5)}</span>
+    <span class="tl">${segs || `<em>${r.sit === 'sem' ? 'Sem registro · toque para registrar' : 'Sem horários'}</em>`}</span>
+    <span class="hs"><b>${r.op ? prHoras(r.op) : '–'}</b>${r.pa ? `<small>${prHoras(r.pa)} parada</small>` : ''}</span>
+    ${mots.length || (d && d.fotos && d.fotos.length) ? `<span class="mt">${mots.map(m => `<span>${esc(m)}</span>`).join('')}${d && d.fotos && d.fotos.length ? '<span>📷 evidência</span>' : ''}</span>` : ''}
+  </button>`;
+}
 function viewProducao(){
-  const st = prStats(PR.mes), [y, m] = PR.mes.split('-').map(Number), hoje = prHoje();
-  const pri = new Date(y, m - 1, 1).getDay(), dias = prDiasDoMes(PR.mes);
-  const cel = dias.map(id => {
-    const d = PR.dias[id], r = prResumo(d), fut = id > hoje;
-    const leg = r.sit === 'sem' ? '' : r.sit === 'parada' ? 'Parada' : prHoras(r.op);
-    return `<button class="pr-dia ${fut ? 'futuro' : r.sit} ${id === hoje ? 'hoje' : ''}" ${fut ? 'disabled' : `data-pract="dia" data-id="${id}"`} aria-label="${fmtData(id)}: ${PR_SIT[r.sit]}"><b>${+id.slice(8)}</b>${d && d.fotos && d.fotos.length ? '<span class="ev">📷</span>' : ''}<small>${leg}</small></button>`;
-  }).join('');
+  const hoje = prHoje(), {ini, fim} = prIntervalo(), dias = prDias(ini, fim), st = prStatsDias(dias), vis = dias.filter(d => d <= hoje).reverse();
+  const esc0 = prEscala(vis), [A, B] = esc0, marcas = []; for (let h = A; h <= B; h += (B - A) > 720 ? 180 : 120) marcas.push(h);
   const mots = Object.entries(st.mot).sort((a, b) => b[1] - a[1]); const maxM = mots.length ? mots[0][1] : 1;
   const semReg = st.dias.length - st.reg;
-  return `<div class="pr-mes"><button class="iconbtn" data-pract="mes" data-v="-1" aria-label="Mês anterior" ${PR.mes <= PR_INICIO ? 'disabled' : ''}>‹</button><h2>${PR_MESES[m - 1]} ${y}</h2><button class="iconbtn" data-pract="mes" data-v="1" aria-label="Próximo mês" ${PR.mes >= hoje.slice(0, 7) ? 'disabled' : ''}>›</button></div>
+  const podeVoltar = ini > PR_INICIO + '-01', podeIr = fim < hoje;
+  return `<div class="seg pr-modos" role="group" aria-label="Período">${Object.entries(PR_MODOS).map(([k, t]) => `<button type="button" aria-pressed="${PR.modo === k}" data-pract="modo" data-v="${k}">${t}</button>`).join('')}</div>
+  ${PR.modo === 'livre' ? `<div class="pr-livre"><label class="f">De<input type="date" id="prDe" min="${PR_INICIO}-01" max="${hoje}" value="${esc(ini)}"></label><label class="f">Até<input type="date" id="prAte" min="${PR_INICIO}-01" max="${hoje}" value="${esc(fim)}"></label></div>` : ''}
+  <div class="pr-mes"><button class="iconbtn" data-pract="nav" data-v="-1" aria-label="Período anterior" ${PR.modo === 'livre' || !podeVoltar ? 'disabled' : ''}>‹</button><h2>${esc(prTituloPer())}</h2><button class="iconbtn" data-pract="nav" data-v="1" aria-label="Próximo período" ${PR.modo === 'livre' || !podeIr ? 'disabled' : ''}>›</button></div>
   <div class="kpis pr-kpis" style="margin:0 0 12px">
-    <div class="kpi" style="--c:var(--ok)"><b>${st.dOp + st.dParc}</b><span>Dias com produção</span></div>
-    <div class="kpi" style="--c:var(--ok)"><b>${prHoras(st.op)}</b><span>Planta operando</span></div>
+    <div class="kpi" style="--c:var(--ok)"><b>${prHoras(st.op)}</b><span>Planta rodando</span></div>
     <div class="kpi" style="--c:var(--interd)"><b>${prHoras(st.pa)}</b><span>Planta parada</span></div>
     <div class="kpi" style="--c:var(--brand)"><b>${st.disp == null ? '–' : Math.round(st.disp * 100) + '%'}</b><span>Disponibilidade</span></div>
+    <div class="kpi" style="--c:var(--ok)"><b>${st.dOp + st.dParc}<small style="font-size:14px;color:var(--muted)"> / ${st.dias.length}</small></b><span>Dias com produção</span></div>
   </div>
   <div class="actions" style="margin:0 0 12px">
-    <button class="btn pri" data-pract="dia" data-id="${PR.mes === hoje.slice(0, 7) ? hoje : dias[dias.length - 1]}">${PR.dias[hoje] ? 'Editar o dia de hoje' : 'Registrar o dia de hoje'}</button>
-    <button class="btn" data-pract="pdf">${icoPDF()} Relatório do mês</button>
+    <button class="btn pri" data-pract="dia" data-id="${hoje}">${PR.dias[hoje] ? 'Editar o dia de hoje' : 'Registrar o dia de hoje'}</button>
+    <button class="btn" data-pract="pdf">${icoPDF()} Relatório do período</button>
   </div>
   <section class="panel">
-    <h2>Calendário <small>${semReg > 0 ? plural(semReg, 'dia sem registro', 'dias sem registro') : 'todos os dias registrados'}</small></h2>
-    <div class="pr-cal">${['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(s => `<span class="sem">${s}</span>`).join('')}${'<span class="pr-dia vazio"></span>'.repeat(pri)}${cel}</div>
-    <div class="pr-leg"><span style="--c:var(--ok)">Operou</span><span style="--c:#E3A008">Operou com paradas</span><span style="--c:var(--interd)">Parada</span><span style="--c:var(--line)">Sem registro</span></div>
+    <h2>Dia a dia <small>${semReg > 0 ? plural(semReg, 'dia sem registro', 'dias sem registro') : 'todos os dias registrados'}</small></h2>
+    <div class="pr-esc"><span></span><span class="tl">${marcas.map(h => `<i style="left:${(h - A) / (B - A) * 100}%">${String(h / 60).padStart(2, '0')}h</i>`).join('')}</span><span></span></div>
+    <div class="pr-lista">${vis.length ? vis.map(id => prLinhaDia(id, esc0, hoje)).join('') : '<div class="empty"><b>Período ainda não começou</b>Escolha outro período.</div>'}</div>
+    <div class="pr-leg"><span style="--c:var(--ok)">Rodando</span><span style="--c:var(--interd)">Parada</span></div>
   </section>
   <section class="panel" style="margin-top:12px">
-    <h2>Motivos de parada <small>horas no mês</small></h2>
-    ${mots.length ? mots.map(([k, v]) => `<div class="pr-bar"><span>${esc(k)}</span><span class="tr"><i style="width:${Math.max(4, v / maxM * 100)}%"></i></span><b>${prHoras(v)}</b></div>`).join('') : '<div class="empty" style="padding:14px"><b>Nenhuma parada registrada</b>As paradas e os motivos aparecem aqui.</div>'}
+    <h2>Por que a planta parou <small>horas no período</small></h2>
+    ${mots.length ? mots.map(([k, v]) => `<div class="pr-bar"><span>${esc(k)}</span><span class="tr"><i style="width:${Math.max(4, v / maxM * 100)}%"></i></span><b>${prHoras(v)}</b></div>`).join('') : '<div class="empty" style="padding:14px"><b>Nenhuma parada no período</b>As paradas e os motivos aparecem aqui.</div>'}
     ${Object.keys(st.ativ).length ? `<h2 style="margin-top:14px">Atividades realizadas</h2><div class="pr-chips">${Object.entries(st.ativ).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="chip">${esc(k)} · ${plural(v, 'dia')}</span>`).join('')}</div>` : ''}
-    ${st.temTon ? `<p class="muted" style="margin:12px 0 0">Produção informada no mês: <b>${(Math.round(st.ton * 10) / 10).toLocaleString('pt-BR')} t</b></p>` : ''}
+    ${st.temTon ? `<p class="muted" style="margin:12px 0 0">Produção informada no período: <b>${(Math.round(st.ton * 10) / 10).toLocaleString('pt-BR')} t</b></p>` : ''}
   </section>`;
 }
 /* ---------- editor do dia ---------- */
@@ -4871,12 +4934,12 @@ function prReduz(file){
     im.onload = () => { const k = Math.min(1, 900 / Math.max(im.width, im.height)); const c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c.toDataURL('image/jpeg', .58)); };
     im.onerror = () => { URL.revokeObjectURL(u); err(new Error('img')); }; im.src = u; });
 }
-function prPdfMes(mes){
+function prPdfPeriodo(){
   const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4'});
-  const W = 210, M = 14, st = prStats(mes), [y, m] = mes.split('-').map(Number);
-  ciCab(doc, 'Relatório de produção da planta', `${PR_MESES[m - 1]} de ${y} · Britagem Serra Norte · gerado em ${fmtDH(new Date())}`);
+  const {ini, fim} = prIntervalo(), W = 210, M = 14, st = prStatsDias(prDias(ini, fim));
+  ciCab(doc, 'Relatório de produção da planta', `${fmtData(ini)} a ${fmtData(fim)} · Britagem Serra Norte · gerado em ${fmtDH(new Date())}`);
   let yy = 44;
-  const kp = [['Dias com produção', String(st.dOp + st.dParc), [46, 139, 87]], ['Planta operando', prHoras(st.op), [46, 139, 87]], ['Planta parada', prHoras(st.pa), [198, 47, 40]], ['Disponibilidade', st.disp == null ? '–' : Math.round(st.disp * 100) + '%', [13, 56, 91]]];
+  const kp = [['Dias com produção', `${st.dOp + st.dParc} de ${st.dias.length}`, [46, 139, 87]], ['Planta rodando', prHoras(st.op), [46, 139, 87]], ['Planta parada', prHoras(st.pa), [198, 47, 40]], ['Disponibilidade', st.disp == null ? '–' : Math.round(st.disp * 100) + '%', [13, 56, 91]]];
   const kw = (W - 2 * M - 9) / 4;
   kp.forEach(([l, v, c], i) => { const x = M + i * (kw + 3); doc.setFillColor(244, 246, 248); doc.roundedRect(x, yy, kw, 22, 2, 2, 'F'); doc.setFillColor(...c); doc.rect(x, yy, 1.6, 22, 'F');
     doc.setTextColor(...c); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(v, x + 5, yy + 11); doc.setTextColor(91, 105, 117); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.text(l, x + 5, yy + 17.5); });
@@ -4902,7 +4965,7 @@ function prPdfMes(mes){
     ls.forEach((l, j) => doc.text(l, x + 2, yy + j * 3.8)); yy += h;
   });
   const comFoto = st.dias.filter(id => PR.dias[id] && (PR.dias[id].fotos || []).length);
-  if (comFoto.length){ doc.addPage(); yy = 18; doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(13, 56, 91); doc.text('Evidências do mês', M, yy); yy += 7;
+  if (comFoto.length){ doc.addPage(); yy = 18; doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(13, 56, 91); doc.text('Evidências do período', M, yy); yy += 7;
     let col = 0; const fw = (W - 2 * M - 8) / 3, fh = fw * 0.75;
     comFoto.forEach(id => (PR.dias[id].fotos || []).forEach(f => { if (yy + fh + 8 > 285){ doc.addPage(); yy = 18; col = 0; }
       try { doc.addImage(f, 'JPEG', M + col * (fw + 4), yy, fw, fh); } catch {}
@@ -4913,9 +4976,10 @@ function prPdfMes(mes){
 document.addEventListener('click', async e => {
   const b = e.target.closest('[data-pract]'); if (!b) return; const d = b.dataset;
   switch (d.pract){
-    case 'mes': prMesNav(+d.v); return;
+    case 'nav': prNav(+d.v); return;
+    case 'modo': PR.modo = d.v; if (d.v !== 'livre') PR.ref = prHoje(); render(); return;
     case 'dia': prAbrir(d.id); return;
-    case 'pdf': gerar(b, async () => prPdfMes(PR.mes), nomeArq('Producao_planta_' + PR.mes) + '.pdf'); return;
+    case 'pdf': { const {ini, fim} = prIntervalo(); gerar(b, async () => prPdfPeriodo(), nomeArq(`Producao_planta_${ini}_a_${fim}`) + '.pdf'); return; }
     case 'tipo': prLerCampos(); PR.ed.periodos[+d.i].tipo = d.v; if (d.v !== 'parada') PR.ed.periodos[+d.i].motivo = ''; prRedesenhar(); return;
     case 'delper': prLerCampos(); PR.ed.periodos.splice(+d.i, 1); prRedesenhar(); return;
     case 'addper': { prLerCampos(); const ult = PR.ed.periodos[PR.ed.periodos.length - 1]; PR.ed.periodos.push({tipo: d.v, ini: ult ? ult.fim : '07:00', fim: '', motivo: '', obs: ''}); prRedesenhar(); return; }
@@ -4937,6 +5001,7 @@ document.addEventListener('click', async e => {
       return;
   }
 });
+document.addEventListener('change', e => { if (e.target.id === 'prDe' || e.target.id === 'prAte'){ PR[e.target.id === 'prDe' ? 'de' : 'ate'] = e.target.value; render(); } });
 document.addEventListener('input', e => { if (e.target.matches('[data-prf="ini"],[data-prf="fim"]') && PR.ed){ prLerCampos(); const r = document.getElementById('prRes'); if (r) r.innerHTML = prResTxt(prResumo(PR.ed)); } });
 document.addEventListener('change', async e => {
   if (e.target.id !== 'prInFoto' || !PR.ed) return; prLerCampos();
