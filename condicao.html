@@ -264,12 +264,15 @@ function desenhaVids(){
   document.querySelectorAll('#vids figure').forEach(f => f.remove());
   videos.forEach((v, i) => {
     const f = document.createElement('figure');
-    f.innerHTML = `<img src="${v.thumb}" alt="Vídeo ${i+1}"><figcaption>▶ ${Math.round(v.dur)} s</figcaption><button type="button" aria-label="Remover vídeo ${i+1}" data-v="${i}">×</button>`;
+    const leg = v.estado === 'prep' ? `Preparando ${Math.round((v.p || 0) * 100)}%` : v.estado === 'erro' ? 'Falhou · remova' : `▶ ${Math.round(v.dur)} s`;
+    f.innerHTML = `${v.thumb ? `<img src="${v.thumb}" alt="Vídeo ${i+1}">` : ''}<figcaption>${leg}</figcaption><button type="button" aria-label="Remover vídeo ${i+1}" data-v="${i}">×</button>`;
+    if (v.estado === 'prep') f.insertAdjacentHTML('beforeend', `<i style="position:absolute;left:0;bottom:0;height:4px;background:var(--accent);width:${Math.round((v.p || 0) * 100)}%"></i>`);
+    if (v.estado === 'erro') f.style.outline = '2px solid var(--erro)';
     $('#vids').insertBefore(f, $('#addVid'));
   });
   mostra('#addVid', videos.length < 2);
 }
-$('#vids').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; videos.splice(+b.dataset.v, 1); desenhaVids(); });
+$('#vids').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; const v = videos[+b.dataset.v]; if (v) v.cancelado = true; videos.splice(+b.dataset.v, 1); desenhaVids(); });
 function atualizaCorte(qual){
   const ini = $('#rIni'), fim = $('#rFim'); let a = +ini.value, b = +fim.value; const D = vSel.dur;
   if (qual === 'ini'){ if (b - a > MAXV) b = a + MAXV; if (b <= a) b = Math.min(D, a + 1); }
@@ -289,21 +292,25 @@ $('#inVid').addEventListener('change', e => {
   mostra('#mdVid', true); document.body.style.overflow = 'hidden';
   v.onloadedmetadata = () => {
     vSel.dur = isFinite(v.duration) ? v.duration : MAXV;
+    if (vSel.dur <= MAXV + .3){ vSel.ini = 0; vSel.fim = vSel.dur; usarTrecho(); return; }
     ['rIni','rFim'].forEach(id => $('#' + id).max = vSel.dur.toFixed(1));
     $('#rIni').value = 0; $('#rFim').value = Math.min(vSel.dur, MAXV).toFixed(1); atualizaCorte('ini');
   };
   v.onerror = () => { $('#vidErro').textContent = 'Este vídeo não pôde ser aberto neste celular. Tente outro.'; mostra('#vidErro', true); mostra('#vUsar', false); };
 });
-function fechaVid(){ const v = $('#vPrev'); v.pause(); v.removeAttribute('src'); v.load(); if (vSel && vSel.url) URL.revokeObjectURL(vSel.url); vSel = null; mostra('#mdVid', false); document.body.style.overflow = ''; }
-$('#vCancel').addEventListener('click', fechaVid);
+function fechaVid(manter){ const v = $('#vPrev'); v.pause(); v.removeAttribute('src'); v.load(); if (vSel && vSel.url && !manter) URL.revokeObjectURL(vSel.url); vSel = null; mostra('#mdVid', false); document.body.style.overflow = ''; }
+$('#vCancel').addEventListener('click', () => fechaVid());
 $('#vVer').addEventListener('click', () => {
   const v = $('#vPrev'); v.currentTime = vSel.ini; v.play().catch(() => {});
   v.ontimeupdate = () => { if (v.currentTime >= vSel.fim){ v.pause(); v.ontimeupdate = null; } };
 });
 const esperar = (el, ev) => new Promise(ok => el.addEventListener(ev, ok, {once: true}));
-async function recodificar(url, ini, fim, prog){
+async function recodificar(url, ini, fim, prog, cancelado){
   if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) throw new Error('sem-suporte');
-  const v = document.createElement('video'); v.playsInline = true; v.preload = 'auto'; v.src = url;
+  const v = document.createElement('video'); v.playsInline = true; v.preload = 'auto'; v.setAttribute('playsinline', '');
+  v.style.cssText = 'position:fixed;left:-2px;top:-2px;width:2px;height:2px;opacity:0.01;pointer-events:none'; document.body.appendChild(v);
+  v.src = url;
+  try {
   if (v.readyState < 1) await esperar(v, 'loadedmetadata');
   const k = Math.min(1, 480 / Math.max(v.videoWidth || 480, v.videoHeight || 480));
   const cv = document.createElement('canvas'); cv.width = Math.max(2, Math.round((v.videoWidth || 480) * k / 2) * 2); cv.height = Math.max(2, Math.round((v.videoHeight || 270) * k / 2) * 2);
@@ -319,34 +326,45 @@ async function recodificar(url, ini, fim, prog){
   const fimRec = new Promise(ok => rec.onstop = ok);
   rec.start(500);
   try { await v.play(); } catch { v.muted = true; await v.play(); }
-  await new Promise(ok => {
+  await new Promise((ok, falha) => {
+    let ultimo = -1, parado = 0;
+    const vigia = setInterval(() => {
+      if (cancelado && cancelado()) { clearInterval(vigia); return falha(new Error('cancelado')); }
+      if (v.currentTime === ultimo){ if (++parado >= 8){ clearInterval(vigia); falha(new Error('travou')); } } else { parado = 0; ultimo = v.currentTime; }
+    }, 500);
     const passo = () => {
       cx.drawImage(v, 0, 0, cv.width, cv.height);
       prog(Math.min(1, (v.currentTime - ini) / (fim - ini)));
-      if (v.currentTime >= fim || v.ended) return ok();
-      (v.requestVideoFrameCallback ? v.requestVideoFrameCallback(passo) : requestAnimationFrame(passo));
+      if (v.currentTime >= fim || v.ended){ clearInterval(vigia); return ok(); }
+      setTimeout(passo, 1000 / 30);
     };
     passo();
   });
   v.pause(); rec.stop(); await fimRec; stream.getTracks().forEach(t => t.stop()); if (ac) ac.close().catch(() => {});
   const blob = new Blob(partes, {type: (rec.mimeType || mime || 'video/webm').split(';')[0]});
   return {blob, thumb, dur: fim - ini};
+  } finally { try { v.pause(); v.removeAttribute('src'); v.load(); v.remove(); } catch {} }
 }
-$('#vUsar').addEventListener('click', async () => {
+function quadroAtual(){
+  try { const v = $('#vPrev'); if (!v.videoWidth) return ''; const c = document.createElement('canvas'); const k = 240 / Math.max(v.videoWidth, v.videoHeight); c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k); c.getContext('2d').drawImage(v, 0, 0, c.width, c.height); return c.toDataURL('image/jpeg', .6); } catch { return ''; }
+}
+function usarTrecho(){
   if (!vSel || !vSel.dur) return;
-  const d = vSel.fim - vSel.ini; if (d > MAXV + .05) return; 
-  $('#vPrev').pause(); mostra('#corte', false); mostra('#vidBtns', false); mostra('#vUsar', false); mostra('#vidErro', false); mostra('#prog', true);
-  try {
-    const r = await recodificar(vSel.url, vSel.ini, vSel.fim, p => { $('#progBar').style.width = (p * 100).toFixed(0) + '%'; $('#progTxt').textContent = `Preparando o vídeo… ${Math.round(p * d)} de ${Math.round(d)} s`; });
-    if (r.blob.size > 3600000) throw new Error('grande');
-    if (r.blob.size < 2000) throw new Error('vazio');
-    videos.push(r); desenhaVids(); fechaVid();
-  } catch (e) {
-    console.error(e);
-    $('#vidErro').textContent = e.message === 'grande' ? 'O vídeo ficou pesado demais. Escolha um trecho menor.' : e.message === 'sem-suporte' ? 'Este navegador não consegue preparar vídeos. Envie só as fotos ou use o Chrome.' : 'Não foi possível preparar este vídeo. Tente outro trecho ou outro vídeo.';
-    mostra('#vidErro', true); mostra('#prog', false); mostra('#corte', true); mostra('#vidBtns', true); mostra('#vUsar', true);
-  }
-});
+  const d = vSel.fim - vSel.ini; if (d > MAXV + .05 || d < .5) return;
+  const ent = {estado: 'prep', p: 0, dur: d, thumb: quadroAtual()};
+  const url = vSel.url, ini = vSel.ini, fim = vSel.fim;
+  videos.push(ent); desenhaVids(); fechaVid(true);
+  let ultimoDesenho = 0;
+  ent.pronto = recodificar(url, ini, fim, p => { ent.p = p; const t = Date.now(); if (t - ultimoDesenho > 400){ ultimoDesenho = t; desenhaVids(); } }, () => ent.cancelado)
+    .then(r => {
+      if (r.blob.size > 3600000) throw new Error('grande');
+      if (r.blob.size < 2000) throw new Error('vazio');
+      Object.assign(ent, r, {estado: 'ok', p: 1});
+    })
+    .catch(e => { console.error(e); ent.estado = 'erro'; ent.msg = e.message === 'grande' ? 'O vídeo ficou pesado demais. Escolha um trecho menor.' : e.message === 'sem-suporte' ? 'Este navegador não consegue preparar vídeos. Envie só as fotos ou use o Chrome.' : 'Não foi possível preparar o vídeo. Remova e tente de novo.'; if (!ent.cancelado) erro(ent.msg); })
+    .finally(() => { URL.revokeObjectURL(url); desenhaVids(); });
+}
+$('#vUsar').addEventListener('click', usarTrecho);
 const blobB64 = b => new Promise((ok, err) => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = err; f.readAsDataURL(b); });
 
 const val = id => $('#' + id).value.trim();
@@ -378,6 +396,11 @@ $('#btnEnviar').addEventListener('click', async () => {
   const docId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const comTempo = (p, ms) => Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error('tempo')), ms))]);
   try {
+    for (const v of videos.filter(x => x.estado === 'prep')){
+      const tik = setInterval(() => { b.textContent = `Terminando o vídeo… ${Math.round((v.p || 0) * 100)}%`; }, 300);
+      try { await v.pronto; } finally { clearInterval(tik); }
+    }
+    if (videos.some(v => v.estado === 'erro')) throw new Error('video-erro');
     if (videos.length){
       reg.videos = [];
       for (let i = 0; i < videos.length; i++){
@@ -396,6 +419,7 @@ $('#btnEnviar').addEventListener('click', async () => {
     mostra('#form', false); mostra('#barra', false); mostra('#telaOk', true); window.scrollTo(0, 0);
   } catch (e) {
     console.error(e);
+    if (e && e.message === 'video-erro') return erro('Um dos vídeos não ficou pronto. Remova o vídeo marcado em vermelho e tente de novo.', '#vids');
     erro(e && e.code === 'permission-denied' ? 'O sistema ainda não está liberado para receber registros. Avise a Segurança do Trabalho.' : 'Não foi possível enviar. Verifique a internet e tente de novo.');
   } finally { b.disabled = false; b.textContent = 'Enviar registro'; }
 });
