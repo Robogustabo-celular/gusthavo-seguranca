@@ -4765,7 +4765,7 @@ if (S.db) ciAssinar(S.db);
 /* ================= Produção: diário da planta a partir de novembro/2026 ================= */
 const PR = {dias:{}, ok:false, sub:false, mes:null, ed:null};
 const PR_INICIO = '2026-11';
-const PR_MOTIVOS = ['Condições climáticas (chuva)', 'Material molhado', 'Manutenção corretiva', 'Manutenção preventiva', 'Ausência de peça', 'Ausência de documentação', 'Abastecimento', 'Melhoria do canteiro', 'Realização de 5S / limpeza', 'DSS / treinamento', 'Falta de material / frente de lavra', 'Falta de equipamento de apoio', 'Falta de energia', 'Aguardando liberação', 'Interdição / segurança', 'Horário de refeição', 'Outro'];
+const PR_MOTIVOS = ['Condições climáticas (chuva)', 'Material molhado', 'Manutenção corretiva', 'Manutenção preventiva', 'Ausência de peça', 'Ausência de documentação', 'Abastecimento', 'Melhoria do canteiro', 'Realização de 5S / limpeza', 'Ausência de treinamento', 'Falta de material / frente de lavra', 'Falta de equipamento de apoio', 'Falta de energia', 'Aguardando liberação', 'Interdição / segurança', 'Horário de refeição', 'Outro'];
 const PR_ATIV = ['DSS', '5S', 'Treinamento', 'Limpeza', 'Manutenção preventiva', 'Inspeção', 'Abastecimento', 'Melhoria do canteiro'];
 const PR_AVAL = ['Dia produtivo', 'Produção parcial', 'Baixa produção', 'Sem produção'];
 const PR_HORAS = (() => { const o = []; for (let m = 5 * 60; m <= 23 * 60 + 30; m += 30) o.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`); return o; })();
