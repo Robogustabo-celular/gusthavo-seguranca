@@ -4729,6 +4729,10 @@ if (S.db) ciAssinar(S.db);
 .pr-esc .tl{background:none;height:16px}
 .pr-esc .tl i{position:absolute;transform:translateX(-50%);font-style:normal;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .pr-lin .tl i{position:absolute;top:0;bottom:0;border-radius:4px}
+.pr-lin .tl u{position:absolute;top:-3px;bottom:-3px;border:1.5px dashed color-mix(in srgb,var(--brand) 45%,transparent);border-radius:6px;text-decoration:none}
+.pr-lin .hs small.mt0{color:var(--muted);font-weight:500}
+.pr-kpi-main b{font-size:30px}
+.pr-meta{display:block;height:8px;border-radius:99px;background:var(--surface2);margin-top:8px;overflow:hidden}.pr-meta i{display:block;height:100%;background:var(--ok);border-radius:99px}
 .pr-lin .tl i.op{background:var(--ok)}.pr-lin .tl i.pa{background:var(--interd)}
 .pr-lin .tl em{position:absolute;inset:0;display:flex;align-items:center;padding-left:8px;font-style:normal;font-size:12px;color:var(--muted)}
 .pr-lin .hs{display:grid;text-align:right;font-variant-numeric:tabular-nums}.pr-lin .hs b{font-size:15px;color:var(--ok)}.pr-lin .hs small{font-size:11.5px;color:var(--interd);font-weight:600}
@@ -4767,6 +4771,9 @@ const PR = {dias:{}, ok:false, sub:false, mes:null, ed:null};
 const PR_INICIO = '2026-11';
 const PR_MOTIVOS = ['Condições climáticas (chuva)', 'Material molhado', 'Manutenção corretiva', 'Manutenção preventiva', 'Ausência de peça', 'Ausência de documentação', 'Abastecimento', 'Melhoria do canteiro', 'Realização de 5S / limpeza', 'Ausência de treinamento', 'Falta de material / frente de lavra', 'Falta de equipamento de apoio', 'Falta de energia', 'Aguardando liberação', 'Interdição / segurança', 'Horário de refeição', 'Outro'];
 const PR_ATIV = ['DSS', '5S', 'Treinamento', 'Limpeza', 'Manutenção preventiva', 'Inspeção', 'Abastecimento', 'Melhoria do canteiro'];
+/* jornada: segunda a quinta 07:00–17:00, sexta 07:00–16:00, fim de semana sem jornada */
+const prJornada = id => { const w = prD(id).getDay(); return w >= 1 && w <= 4 ? ['07:00', '17:00'] : w === 5 ? ['07:00', '16:00'] : null; };
+const prMeta = id => { const j = prJornada(id); return j ? (prMin(j[1]) - prMin(j[0])) / 60 : 0; };
 const PR_AVAL = ['Dia produtivo', 'Produção parcial', 'Baixa produção', 'Sem produção'];
 const PR_HORAS = (() => { const o = []; for (let m = 5 * 60; m <= 23 * 60 + 30; m += 30) o.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`); return o; })();
 const prSelHora = (attrs, v) => { const ops = PR_HORAS.includes(v) || !v ? PR_HORAS : [...PR_HORAS, v].sort(); return `<select ${attrs}><option value="">--:--</option>${ops.map(h => `<option ${h === v ? 'selected' : ''}>${h}</option>`).join('')}</select>`; };
@@ -4824,7 +4831,8 @@ function prStatsDias(dias){
     if (r.sit === 'op') dOp++; else if (r.sit === 'parcial') dParc++; else if (r.sit === 'parada') dPar++;
     Object.entries(r.mot).forEach(([k, v]) => mot[k] = (mot[k] || 0) + v); (d.atividades || []).forEach(a => ativ[a] = (ativ[a] || 0) + 1);
     if (d.toneladas != null && d.toneladas !== ''){ ton += +d.toneladas || 0; temTon = true; } });
-  return {dias, reg, op, pa, dOp, dPar, dParc, mot, ativ, ton, temTon, disp: op + pa > 0 ? op / (op + pa) : null};
+  const meta = dias.reduce((t, id) => t + prMeta(id), 0);
+  return {dias, reg, op, pa, dOp, dPar, dParc, mot, ativ, ton, temTon, meta, pct: meta > 0 ? op / meta : null, disp: op + pa > 0 ? op / (op + pa) : null};
 }
 function prEscala(dias){
   let a = 6 * 60, b = 18 * 60;
@@ -4843,10 +4851,12 @@ function prLinhaDia(id, esc0, hoje){
   const segs = ((d && d.periodos) || []).map(p => { const x = prMin(p.ini), y = prMin(p.fim); if (x == null || y == null) return ''; const yy = y > x ? y : B; const l = Math.max(0, (x - A) / tot * 100), w = Math.max(0.6, (Math.min(B, yy) - Math.max(A, x)) / tot * 100);
     return `<i class="${p.tipo === 'parada' ? 'pa' : 'op'}" style="left:${l}%;width:${w}%" title="${esc((p.tipo === 'parada' ? 'Parada · ' + (p.motivo || '') : 'Operando') + ' ' + p.ini + '–' + p.fim)}"></i>`; }).join('');
   const mots = Object.keys(r.mot);
+  const jr = prJornada(id), mt = prMeta(id);
+  const faixa = jr ? `<u style="left:${Math.max(0, (prMin(jr[0]) - A) / tot * 100)}%;width:${(prMin(jr[1]) - prMin(jr[0])) / tot * 100}%"></u>` : '';
   return `<button class="pr-lin ${r.sit} ${id === hoje ? 'hoje' : ''}" data-pract="dia" data-id="${id}">
     <span class="dt"><b>${sem}</b>${fmtData(id).slice(0, 5)}</span>
-    <span class="tl">${segs || `<em>${r.sit === 'sem' ? 'Sem registro · toque para registrar' : 'Sem horários'}</em>`}</span>
-    <span class="hs"><b>${r.op ? prHoras(r.op) : '–'}</b>${r.pa ? `<small>${prHoras(r.pa)} parada</small>` : ''}</span>
+    <span class="tl">${faixa}${segs || `<em>${r.sit === 'sem' ? 'Sem registro · toque para registrar' : 'Sem horários'}</em>`}</span>
+    <span class="hs"><b>${r.op ? prHoras(r.op) : '–'}</b>${mt ? `<small class="mt0">de ${prHoras(mt)}</small>` : '<small class="mt0">sem jornada</small>'}${r.pa ? `<small>${prHoras(r.pa)} parada</small>` : ''}</span>
     ${d ? `<span class="mt">${d.avaliacao ? `<span class="av">${esc(d.avaliacao)}</span>` : ''}${d.dss && d.dss.feito ? `<span class="ds">DSS ${esc(d.dss.hora || '')}</span>` : ''}${mots.map(m => `<span>${esc(m)}</span>`).join('')}${d.fotos && d.fotos.length ? '<span class="ds">📷 evidência</span>' : ''}</span>` : ''}
   </button>`;
 }
@@ -4860,11 +4870,12 @@ function viewProducao(){
   ${PR.modo === 'livre' ? `<div class="pr-livre"><label class="f">De<input type="date" id="prDe" min="${PR_INICIO}-01" max="${hoje}" value="${esc(ini)}"></label><label class="f">Até<input type="date" id="prAte" min="${PR_INICIO}-01" max="${hoje}" value="${esc(fim)}"></label></div>` : ''}
   <div class="pr-mes"><button class="iconbtn" data-pract="nav" data-v="-1" aria-label="Período anterior" ${PR.modo === 'livre' || !podeVoltar ? 'disabled' : ''}>‹</button><h2>${esc(prTituloPer())}</h2><button class="iconbtn" data-pract="nav" data-v="1" aria-label="Próximo período" ${PR.modo === 'livre' || !podeIr ? 'disabled' : ''}>›</button></div>
   <div class="kpis pr-kpis" style="margin:0 0 12px">
-    <div class="kpi" style="--c:var(--ok)"><b>${prHoras(st.op)}</b><span>Planta rodando</span></div>
-    <div class="kpi" style="--c:var(--interd)"><b>${prHoras(st.pa)}</b><span>Planta parada</span></div>
-    <div class="kpi" style="--c:var(--brand)"><b>${st.disp == null ? '–' : Math.round(st.disp * 100) + '%'}</b><span>Disponibilidade</span></div>
+    <div class="kpi pr-kpi-main" style="--c:var(--ok)"><b>${prHoras(st.op)}<small style="font-size:15px;color:var(--muted)"> de ${prHoras(st.meta)}</small></b><span>Horas produzidas no período</span><span class="pr-meta"><i style="width:${Math.min(100, (st.pct || 0) * 100)}%"></i></span></div>
+    <div class="kpi" style="--c:var(--brand)"><b>${st.pct == null ? '–' : Math.round(st.pct * 100) + '%'}</b><span>Da meta de horas</span></div>
     <div class="kpi" style="--c:var(--ok)"><b>${st.dOp + st.dParc}<small style="font-size:14px;color:var(--muted)"> / ${st.dias.length}</small></b><span>Dias com produção</span></div>
+    <div class="kpi" style="--c:var(--interd)"><b>${prHoras(st.pa)}</b><span>Planta parada</span></div>
   </div>
+  <p class="muted" style="margin:-4px 0 12px;font-size:13px">Meta: jornada de segunda a quinta das 07:00 às 17:00 (10 h) e sexta das 07:00 às 16:00 (9 h).</p>
   <div class="actions" style="margin:0 0 12px">
     <button class="btn pri" data-pract="dia" data-id="${hoje}">${PR.dias[hoje] ? 'Editar o dia de hoje' : 'Registrar o dia de hoje'}</button>
     <button class="btn" data-pract="pdf">${icoPDF()} Relatório do período</button>
@@ -4873,7 +4884,7 @@ function viewProducao(){
     <h2>Dia a dia <small>${semReg > 0 ? plural(semReg, 'dia sem registro', 'dias sem registro') : 'todos os dias registrados'}</small></h2>
     <div class="pr-esc"><span></span><span class="tl">${marcas.map(h => `<i style="left:${(h - A) / (B - A) * 100}%">${String(h / 60).padStart(2, '0')}h</i>`).join('')}</span><span></span></div>
     <div class="pr-lista">${vis.length ? vis.map(id => prLinhaDia(id, esc0, hoje)).join('') : '<div class="empty"><b>Período ainda não começou</b>Escolha outro período.</div>'}</div>
-    <div class="pr-leg"><span style="--c:var(--ok)">Rodando</span><span style="--c:var(--interd)">Parada</span></div>
+    <div class="pr-leg"><span style="--c:var(--ok)">Rodando</span><span style="--c:var(--interd)">Parada</span><span style="--c:transparent;outline:1.5px dashed var(--brand);outline-offset:-2px">Jornada (meta)</span></div>
   </section>
   <section class="panel" style="margin-top:12px">
     <h2>Por que a planta parou <small>horas no período</small></h2>
@@ -4896,14 +4907,14 @@ function prPeriodoHTML(p, i){
     <input data-prf="obs" data-i="${i}" value="${esc(p.obs || '')}" placeholder="${p.tipo === 'parada' ? 'Detalhe da parada (opcional)' : 'Observação (opcional)'}">
   </div>`;
 }
-const prResTxt = r => `<span style="color:var(--ok)">Operando ${prHoras(r.op)}</span><span style="color:var(--interd)">Parada ${prHoras(r.pa)}</span><span>${PR_SIT[r.sit]}</span>`;
+const prResTxt = r => `<span style="color:var(--ok)">Produzido ${prHoras(r.op)}${PR.ed && prMeta(PR.ed.data) ? ' de ' + prHoras(prMeta(PR.ed.data)) : ''}</span><span style="color:var(--interd)">Parada ${prHoras(r.pa)}</span><span>${PR_SIT[r.sit]}</span>`;
 function prCorpo(){
   const e = PR.ed, r = prResumo(e);
   return `<div class="pr-res" id="prRes">${prResTxt(r)}</div>
     <div class="ci-lbl">Períodos do dia</div>
     <div style="display:grid;gap:8px">${e.periodos.map(prPeriodoHTML).join('') || '<p class="muted" style="margin:0">Nenhum período. Use os botões abaixo.</p>'}</div>
     <div class="actions" style="margin:8px 0 0"><button class="btn" data-pract="addper" data-v="operando">+ Operando</button><button class="btn" data-pract="addper" data-v="parada">+ Parada</button></div>
-    <div class="pr-chips" style="margin-top:8px"><span class="muted" style="font-size:13px;align-self:center">Atalhos:</span><button type="button" data-pract="rapido" data-v="manha">+ Manhã 07:00–11:00</button><button type="button" data-pract="rapido" data-v="tarde">+ Tarde 13:00–17:00</button><button type="button" data-pract="preset" data-v="normal">Dia normal 07:00–17:00</button><button type="button" data-pract="preset" data-v="parado">Dia todo parado</button></div>
+    <div class="pr-chips" style="margin-top:8px"><span class="muted" style="font-size:13px;align-self:center">Atalhos:</span><button type="button" data-pract="rapido" data-v="manha">+ Manhã 07:00–11:00</button><button type="button" data-pract="rapido" data-v="tarde">+ Tarde 13:00–${(prJornada(e.data) || ['', '17:00'])[1]}</button><button type="button" data-pract="preset" data-v="normal">Dia normal ${(prJornada(e.data) || ['07:00', '17:00']).join('–')}</button><button type="button" data-pract="preset" data-v="parado">Dia todo parado</button></div>
     <div class="ci-lbl">DSS do dia</div>
     <div class="pr-dss"><label class="sw2"><input type="checkbox" id="prDssOk" ${e.dss && e.dss.feito === false ? '' : 'checked'}> DSS realizado</label><label class="f" style="flex-direction:row;align-items:center;gap:8px;display:flex">Início ${prSelHora('id="prDssHora"', (e.dss && e.dss.hora) || '07:00')}</label><input id="prDssTema" value="${esc((e.dss && e.dss.tema) || '')}" placeholder="Tema do DSS (opcional)"></div>
     <div class="ci-lbl">Como foi o dia</div>
@@ -4949,29 +4960,29 @@ function prPdfPeriodo(){
   const {ini, fim} = prIntervalo(), W = 210, M = 14, st = prStatsDias(prDias(ini, fim));
   ciCab(doc, 'Relatório de produção da planta', `${fmtData(ini)} a ${fmtData(fim)} · Britagem Serra Norte · gerado em ${fmtDH(new Date())}`);
   let yy = 44;
-  const kp = [['Dias com produção', `${st.dOp + st.dParc} de ${st.dias.length}`, [46, 139, 87]], ['Planta rodando', prHoras(st.op), [46, 139, 87]], ['Planta parada', prHoras(st.pa), [198, 47, 40]], ['Disponibilidade', st.disp == null ? '–' : Math.round(st.disp * 100) + '%', [13, 56, 91]]];
+  const kp = [['Horas produzidas', prHoras(st.op), [46, 139, 87]], ['Meta (jornada)', prHoras(st.meta), [13, 56, 91]], ['Da meta', st.pct == null ? '–' : Math.round(st.pct * 100) + '%', [13, 56, 91]], ['Planta parada', prHoras(st.pa), [198, 47, 40]]];
   const kw = (W - 2 * M - 9) / 4;
   kp.forEach(([l, v, c], i) => { const x = M + i * (kw + 3); doc.setFillColor(244, 246, 248); doc.roundedRect(x, yy, kw, 22, 2, 2, 'F'); doc.setFillColor(...c); doc.rect(x, yy, 1.6, 22, 'F');
     doc.setTextColor(...c); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(v, x + 5, yy + 11); doc.setTextColor(91, 105, 117); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.text(l, x + 5, yy + 17.5); });
   yy += 30;
   doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
-  doc.text(`${plural(st.reg, 'dia registrado', 'dias registrados')} de ${st.dias.length} · ${st.dOp} sem paradas · ${st.dParc} com paradas · ${st.dPar} parados${st.temTon ? ' · produção informada: ' + (Math.round(st.ton * 10) / 10).toLocaleString('pt-BR') + ' t' : ''}`, M, yy); yy += 8;
+  doc.text(`Jornada: seg. a qui. 07:00–17:00, sex. 07:00–16:00 · ${plural(st.reg, 'dia registrado', 'dias registrados')} de ${st.dias.length} · ${st.dOp} sem paradas · ${st.dParc} com paradas · ${st.dPar} parados${st.temTon ? ' · produção informada: ' + (Math.round(st.ton * 10) / 10).toLocaleString('pt-BR') + ' t' : ''}`, M, yy); yy += 8;
   const mots = Object.entries(st.mot).sort((a, b) => b[1] - a[1]);
   if (mots.length){ doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(247, 131, 0); doc.text('MOTIVOS DE PARADA', M, yy); yy += 5; const mx = mots[0][1];
     mots.forEach(([k, v]) => { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(27, 39, 51); doc.text(k, M, yy); doc.setFillColor(237, 240, 242); doc.roundedRect(M + 62, yy - 3, 90, 3.6, 1.5, 1.5, 'F'); doc.setFillColor(198, 47, 40); doc.roundedRect(M + 62, yy - 3, Math.max(2, 90 * v / mx), 3.6, 1.5, 1.5, 'F'); doc.setFont('helvetica', 'bold'); doc.text(prHoras(v), M + 157, yy); yy += 6; }); yy += 3; }
-  const cols = [['Dia', 18], ['Situação', 32], ['Operando', 18], ['Parada', 16], ['Motivos, atividades e observações', 98]];
+  const cols = [['Dia', 16], ['Situação', 30], ['Produzido', 20], ['Meta', 14], ['Parada', 15], ['Motivos, atividades e observações', 87]];
   const head = () => { let x = M; doc.setFillColor(13, 56, 91); doc.rect(M, yy - 4.5, W - 2 * M, 6.5, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); cols.forEach(([t, w]) => { doc.text(t, x + 2, yy); x += w; }); yy += 6; };
   head();
   st.dias.forEach((id, i) => {
     const d = PR.dias[id], r = prResumo(d);
     const det = d ? [d.avaliacao, d.dss && d.dss.feito ? 'DSS ' + (d.dss.hora || '') + (d.dss.tema ? ' (' + d.dss.tema + ')' : '') : '', Object.keys(r.mot).join(', '), (d.atividades || []).filter(a => a !== 'DSS').join(', '), d.obs].filter(Boolean).join(' · ') : 'Sem registro';
-    const ls = doc.splitTextToSize(det || '-', 94).slice(0, 3); const h = Math.max(6, ls.length * 3.8 + 2.4);
+    const ls = doc.splitTextToSize(det || '-', 84).slice(0, 3); const h = Math.max(6, ls.length * 3.8 + 2.4);
     if (yy + h > 282){ doc.addPage(); yy = 18; head(); }
     if (i % 2){ doc.setFillColor(244, 246, 248); doc.rect(M, yy - 3.8, W - 2 * M, h, 'F'); }
     const cor = {op:[46, 139, 87], parcial:[199, 127, 0], parada:[198, 47, 40], sem:[150, 160, 168]}[r.sit];
     doc.setFillColor(...cor); doc.rect(M, yy - 3.8, 1.2, h, 'F');
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(27, 39, 51);
-    let x = M; [fmtData(id).slice(0, 5), PR_SIT[r.sit], r.op ? prHoras(r.op) : '-', r.pa ? prHoras(r.pa) : '-'].forEach((v, k) => { if (k === 1){ doc.setTextColor(...cor); doc.setFont('helvetica', 'bold'); } doc.text(v, x + 2, yy); doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'normal'); x += cols[k][1]; });
+    let x = M; [fmtData(id).slice(0, 5), PR_SIT[r.sit], r.op ? prHoras(r.op) : '-', prMeta(id) ? prHoras(prMeta(id)) : '-', r.pa ? prHoras(r.pa) : '-'].forEach((v, k) => { if (k === 1){ doc.setTextColor(...cor); doc.setFont('helvetica', 'bold'); } doc.text(v, x + 2, yy); doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'normal'); x += cols[k][1]; });
     ls.forEach((l, j) => doc.text(l, x + 2, yy + j * 3.8)); yy += h;
   });
   const comFoto = st.dias.filter(id => PR.dias[id] && (PR.dias[id].fotos || []).length);
@@ -4993,8 +5004,8 @@ document.addEventListener('click', async e => {
     case 'tipo': prLerCampos(); PR.ed.periodos[+d.i].tipo = d.v; if (d.v !== 'parada') PR.ed.periodos[+d.i].motivo = ''; prRedesenhar(); return;
     case 'delper': prLerCampos(); PR.ed.periodos.splice(+d.i, 1); prRedesenhar(); return;
     case 'addper': { prLerCampos(); const ult = PR.ed.periodos[PR.ed.periodos.length - 1]; PR.ed.periodos.push({tipo: d.v, ini: ult ? ult.fim : '07:00', fim: '', motivo: '', obs: ''}); prRedesenhar(); return; }
-    case 'preset': prLerCampos(); PR.ed.periodos = d.v === 'normal' ? [{tipo:'operando', ini:'07:00', fim:'17:00', motivo:'', obs:''}] : [{tipo:'parada', ini:'07:00', fim:'17:00', motivo:'', obs:''}]; prRedesenhar(); return;
-    case 'rapido': { prLerCampos(); PR.ed.periodos.push(d.v === 'manha' ? {tipo:'operando', ini:'07:00', fim:'11:00', motivo:'', obs:''} : {tipo:'operando', ini:'13:00', fim:'17:00', motivo:'', obs:''}); PR.ed.periodos.sort((a, b) => (prMin(a.ini) || 0) - (prMin(b.ini) || 0)); prRedesenhar(); return; }
+    case 'preset': { prLerCampos(); const [a0, b0] = prJornada(PR.ed.data) || ['07:00', '17:00']; PR.ed.periodos = [{tipo: d.v === 'normal' ? 'operando' : 'parada', ini: a0, fim: b0, motivo:'', obs:''}]; prRedesenhar(); return; }
+    case 'rapido': { prLerCampos(); PR.ed.periodos.push(d.v === 'manha' ? {tipo:'operando', ini:'07:00', fim:'11:00', motivo:'', obs:''} : {tipo:'operando', ini:'13:00', fim:(prJornada(PR.ed.data) || ['', '17:00'])[1], motivo:'', obs:''}); PR.ed.periodos.sort((a, b) => (prMin(a.ini) || 0) - (prMin(b.ini) || 0)); prRedesenhar(); return; }
     case 'aval': prLerCampos(); PR.ed.avaliacao = d.v; prRedesenhar(); return;
     case 'ativ': { prLerCampos(); const a = PR.ed.atividades, i = a.indexOf(d.v); if (i >= 0) a.splice(i, 1); else a.push(d.v); prRedesenhar(); return; }
     case 'delfoto': prLerCampos(); PR.ed.fotos.splice(+d.i, 1); prRedesenhar(); return;
