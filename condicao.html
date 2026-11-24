@@ -64,6 +64,20 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
 .addfoto{width:88px;height:88px;border:1.5px dashed var(--line);border-radius:10px;display:grid;place-items:center;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;background:var(--surface2)}
 .addfoto svg{width:24px;height:24px;display:block;margin:0 auto 4px}
 .err{color:var(--erro);font-size:13px;font-weight:600}
+.abas{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--surface);border-radius:14px;padding:6px;margin-bottom:12px}
+.abas button{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:10px;padding:12px 8px;background:transparent;color:var(--muted);cursor:pointer}
+.abas button[aria-selected="true"]{background:var(--brand);color:#fff}
+.abas b{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:var(--accent);color:#fff;font-size:12px;margin-left:6px}
+.cod{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface2);border-radius:12px;padding:12px 14px}
+.cod strong{font-size:24px;letter-spacing:.12em;font-variant-numeric:tabular-nums}
+.mini{font:inherit;font-weight:700;font-size:14px;border:1.5px solid var(--line);background:#fff;color:var(--ink);border-radius:10px;padding:9px 12px;cursor:pointer}
+.meu{border:1.5px solid var(--line);border-left:6px solid var(--c,var(--line));border-radius:12px;padding:12px 14px;display:grid;gap:6px;background:#fff}
+.meu .mcab{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.meu .mcab b{font-size:14px;letter-spacing:.03em}
+.st{font-size:12px;font-weight:700;border-radius:99px;padding:4px 10px}
+.st.nova{background:#FFF1E0;color:#B85F00}.st.tratativa{background:#E6EEF5;color:var(--brand)}.st.encerrada{background:#E3F2EA;color:var(--ok)}
+.meu p{margin:0;font-size:14px}.meu small{color:var(--muted);font-size:13px}
+.meu .trat{background:var(--surface2);border-radius:8px;padding:8px 10px;font-size:13.5px}
 .vids{display:flex;gap:8px;flex-wrap:wrap}
 .vids figure{margin:0;position:relative;width:120px;height:88px;border-radius:10px;overflow:hidden;background:#0b1620}
 .vids figure img{width:100%;height:100%;object-fit:cover;opacity:.85}
@@ -109,6 +123,25 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
 </div></header>
 
 <main><div class="wrap">
+<div class="abas" role="tablist">
+  <button type="button" role="tab" id="abaReg" aria-selected="true">Registrar</button>
+  <button type="button" role="tab" id="abaMeus" aria-selected="false">Meus registros<b id="nMeus" class="oculto">0</b></button>
+</div>
+<section id="telaMeus" class="oculto" style="display:grid;gap:12px">
+  <div class="sec">
+    <h2>Seu código pessoal</h2>
+    <p style="margin:-6px 0 0;color:var(--muted);font-size:14px">Seus registros ficam salvos neste celular. Anote este código para ver seus registros em outro celular.</p>
+    <div class="cod"><strong id="meuCod">—</strong><button class="mini" type="button" id="copCod">Copiar código</button></div>
+    <details><summary style="font-weight:600;cursor:pointer">Tenho um código de outro celular</summary>
+      <div style="display:flex;gap:8px;margin-top:10px"><input id="inCod" placeholder="Ex.: K7PQ-29MX" autocomplete="off" style="text-transform:uppercase"><button class="mini" type="button" id="usarCod">Usar</button></div>
+      <p class="err oculto" id="codErro" style="margin:8px 0 0"></p>
+    </details>
+  </div>
+  <div class="sec">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">Meus registros</h2><button class="mini" type="button" id="atualizar">Atualizar</button></div>
+    <div id="listaMeus" style="display:grid;gap:10px"></div>
+  </div>
+</section>
 <form id="form" novalidate>
   <section class="sec">
     <h2><i>1</i> Quem está registrando</h2>
@@ -176,8 +209,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
   <h2>Registro enviado</h2>
   <p>Obrigado. A Segurança do Trabalho já recebeu e vai tratar.</p>
   <span class="proto" id="proto"></span>
-  <p style="font-size:13px">Guarde este número de protocolo.</p>
+  <p style="font-size:13px">Acompanhe a tratativa em <b>Meus registros</b>.</p>
   <button class="btn sec2" id="btnNovo" type="button" style="margin-top:14px">Registrar outra</button>
+  <button class="btn" id="btnVerMeus" type="button" style="margin-top:8px;background:var(--surface2);color:var(--ink)">Ver meus registros</button>
 </section>
 </div></main>
 
@@ -367,6 +401,75 @@ function usarTrecho(){
 $('#vUsar').addEventListener('click', usarTrecho);
 const blobB64 = b => new Promise((ok, err) => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = err; f.readAsDataURL(b); });
 
+/* ---------- Meus registros: ficam no celular e num código pessoal ---------- */
+const ALF = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const ler = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
+const gravar = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+let meus = ler('ci.meus', []);
+let meuCodigo = ler('ci.codigo', '');
+function novoCodigo(){ const a = new Uint32Array(8); crypto.getRandomValues(a); const c = [...a].map(n => ALF[n % ALF.length]).join(''); return c.slice(0, 4) + '-' + c.slice(4); }
+const codChave = c => c.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+function contaMeus(){ const b = $('#nMeus'); b.textContent = meus.length; mostra('#nMeus', meus.length > 0); }
+async function sincronizar(){
+  if (!fs || !meuCodigo) return;
+  try { await fs.collection('ciMeus').doc(codChave(meuCodigo)).set({ids: meus.slice(0, 300), atualizadoEm: Date.now()}); } catch (e) { console.warn('código', e); }
+}
+async function guardarMeu(id){
+  if (!meus.includes(id)) meus.unshift(id);
+  if (!meuCodigo){ meuCodigo = novoCodigo(); gravar('ci.codigo', meuCodigo); }
+  gravar('ci.meus', meus); contaMeus(); await sincronizar();
+}
+const NOMES_POT = {fatalidade:['Fatalidade','#6E0B0B'], vida:['Vida mudada','#C62F28'], afastamento:['Lesão com afastamento','#D9571A'], leve:['Lesão leve','#C77F00'], material:['Dano material','#1F6FB2'], ambiental:['Desvio ambiental','#2E8B57'], outro:['Outro','#5B6975']};
+const NOMES_ST = {nova:'Recebido', tratativa:'Em tratativa', encerrada:'Resolvido'};
+const NOMES_TIPO = {condicao:'Condição insegura', ato:'Ato inseguro', quase:'Quase acidente'};
+const dataBR = d => d ? d.split('-').reverse().join('/') : '';
+const escH = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function carregarMeus(){
+  $('#meuCod').textContent = meuCodigo || 'Gerado no 1º registro';
+  mostra('#copCod', !!meuCodigo);
+  const L = $('#listaMeus');
+  if (!meus.length){ L.innerHTML = '<p style="margin:0;color:var(--muted)">Você ainda não fez registros neste celular. Toque em <b>Registrar</b> para fazer o primeiro.</p>'; return; }
+  L.innerHTML = '<p style="margin:0;color:var(--muted)">Carregando…</p>';
+  const docs = await Promise.all(meus.slice(0, 60).map(id => fs ? fs.collection('condicoes').doc(id).get().then(d => d.exists ? Object.assign({id}, d.data()) : null).catch(() => ({id, erro: true})) : Promise.resolve({id, erro: true})));
+  const ok = docs.filter(Boolean);
+  if (!ok.length){ L.innerHTML = '<p style="margin:0;color:var(--muted)">Nenhum registro encontrado.</p>'; return; }
+  L.innerHTML = ok.map(r => {
+    if (r.erro) return `<div class="meu"><small>Não foi possível carregar um registro agora. Toque em Atualizar.</small></div>`;
+    const [pn, pc] = NOMES_POT[r.potencial] || NOMES_POT.outro, st = r.status || 'nova';
+    const desc = (r.descricao || '').length > 120 ? r.descricao.slice(0, 117) + '…' : (r.descricao || '');
+    return `<div class="meu" style="--c:${pc}">
+      <div class="mcab"><b>${escH(r.protocolo)}</b><span class="st ${st}">${NOMES_ST[st] || st}</span></div>
+      <small>${escH(NOMES_TIPO[r.tipo] || '')} · ${escH(pn)} · ${dataBR(r.data)} ${escH(r.hora || '')} · ${escH(r.local || '')}</small>
+      <p>${escH(desc)}</p>
+      ${r.tratativa || r.responsavel ? `<div class="trat"><b>Tratativa:</b> ${escH(r.tratativa || 'Em andamento')}${r.responsavel ? `<br><small>Responsável: ${escH(r.responsavel)}${r.prazo ? ' · Prazo: ' + dataBR(r.prazo) : ''}</small>` : ''}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+function aba(qual){
+  const reg = qual === 'reg';
+  $('#abaReg').setAttribute('aria-selected', reg); $('#abaMeus').setAttribute('aria-selected', !reg);
+  mostra('#telaMeus', !reg); mostra('#form', reg); mostra('#barra', reg); mostra('#telaOk', false);
+  if (!reg) carregarMeus();
+  window.scrollTo(0, 0);
+}
+$('#abaReg').addEventListener('click', () => aba('reg'));
+$('#abaMeus').addEventListener('click', () => aba('meus'));
+$('#atualizar').addEventListener('click', carregarMeus);
+$('#copCod').addEventListener('click', async () => { try { await navigator.clipboard.writeText(meuCodigo); $('#copCod').textContent = 'Copiado'; setTimeout(() => $('#copCod').textContent = 'Copiar código', 1800); } catch {} });
+$('#usarCod').addEventListener('click', async () => {
+  const c = codChave(val('inCod')); mostra('#codErro', false);
+  if (c.length !== 8){ $('#codErro').textContent = 'O código tem 8 letras e números, como K7PQ-29MX.'; return mostra('#codErro', true); }
+  try {
+    const d = await fs.collection('ciMeus').doc(c).get();
+    if (!d.exists){ $('#codErro').textContent = 'Código não encontrado. Confira as letras e tente de novo.'; return mostra('#codErro', true); }
+    const ids = (d.data().ids || []).filter(x => typeof x === 'string');
+    meus = [...new Set([...meus, ...ids])]; meuCodigo = c.slice(0, 4) + '-' + c.slice(4);
+    gravar('ci.meus', meus); gravar('ci.codigo', meuCodigo); contaMeus(); await sincronizar();
+    $('#inCod').value = ''; carregarMeus();
+  } catch (e) { console.error(e); $('#codErro').textContent = 'Não foi possível buscar agora. Verifique a internet.'; mostra('#codErro', true); }
+});
+contaMeus();
+
 const val = id => $('#' + id).value.trim();
 const radio = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || '';
 function erro(msg, foco){ const e = $('#msgErro'); e.textContent = msg; mostra('#msgErro', true); if (foco){ const el = $(foco); el.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(() => el.focus({preventScroll:true}), 300); } }
@@ -416,6 +519,7 @@ $('#btnEnviar').addEventListener('click', async () => {
     await comTempo(fs.collection('condicoes').doc(docId).set(reg), 20000);
     try { if (!anon) localStorage.setItem('ci.nome', reg.nome); localStorage.setItem('ci.empresa', $('#empresa').value); } catch {}
     $('#proto').textContent = proto;
+    await guardarMeu(docId);
     mostra('#form', false); mostra('#barra', false); mostra('#telaOk', true); window.scrollTo(0, 0);
   } catch (e) {
     console.error(e);
@@ -423,6 +527,7 @@ $('#btnEnviar').addEventListener('click', async () => {
     erro(e && e.code === 'permission-denied' ? 'O sistema ainda não está liberado para receber registros. Avise a Segurança do Trabalho.' : 'Não foi possível enviar. Verifique a internet e tente de novo.');
   } finally { b.disabled = false; b.textContent = 'Enviar registro'; }
 });
+$('#btnVerMeus').addEventListener('click', () => aba('meus'));
 $('#btnNovo').addEventListener('click', () => {
   ['descricao','sugestao','acaoImediata','localOutro'].forEach(id => $('#' + id).value = '');
   fotos.length = 0; desenhaFotos(); videos.length = 0; desenhaVids(); $('#corrigido').checked = false; mostra('#boxAcao', false);
