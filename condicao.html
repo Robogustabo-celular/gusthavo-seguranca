@@ -346,7 +346,7 @@ async function recodificar(url, ini, fim, prog, cancelado){
   v.src = url;
   try {
   if (v.readyState < 1) await esperar(v, 'loadedmetadata');
-  const k = Math.min(1, 480 / Math.max(v.videoWidth || 480, v.videoHeight || 480));
+  const k = Math.min(1, 400 / Math.max(v.videoWidth || 400, v.videoHeight || 400));
   const cv = document.createElement('canvas'); cv.width = Math.max(2, Math.round((v.videoWidth || 480) * k / 2) * 2); cv.height = Math.max(2, Math.round((v.videoHeight || 270) * k / 2) * 2);
   const cx = cv.getContext('2d'); const stream = cv.captureStream(24);
   let ac = null;
@@ -369,12 +369,16 @@ async function recodificar(url, ini, fim, prog, cancelado){
     const passo = () => {
       cx.drawImage(v, 0, 0, cv.width, cv.height);
       prog(Math.min(1, (v.currentTime - ini) / (fim - ini)));
-      if (v.currentTime >= fim || v.ended){ clearInterval(vigia); return ok(); }
+      if (v.currentTime >= fim - 0.12 || v.ended){ clearInterval(vigia); return ok(); }
       setTimeout(passo, 1000 / 30);
     };
     passo();
   });
-  v.pause(); rec.stop(); await fimRec; stream.getTracks().forEach(t => t.stop()); if (ac) ac.close().catch(() => {});
+  v.pause();
+  try { rec.requestData(); } catch {}
+  try { rec.stop(); } catch {}
+  await Promise.race([fimRec, new Promise(ok => setTimeout(ok, 2500))]);
+  stream.getTracks().forEach(t => { try { t.stop(); } catch {} }); if (ac) ac.close().catch(() => {});
   const blob = new Blob(partes, {type: (rec.mimeType || mime || 'video/webm').split(';')[0]});
   return {blob, thumb, dur: fim - ini};
   } finally { try { v.pause(); v.removeAttribute('src'); v.load(); v.remove(); } catch {} }
@@ -386,7 +390,11 @@ function usarTrecho(){
   if (!vSel || !vSel.dur) return;
   const d = vSel.fim - vSel.ini; if (d > MAXV + .05 || d < .5) return;
   const ent = {estado: 'prep', p: 0, dur: d, thumb: quadroAtual()};
-  const url = vSel.url, ini = vSel.ini, fim = vSel.fim;
+  const url = vSel.url, ini = vSel.ini, fim = vSel.fim, file = vSel.file;
+  if (file && file.size <= 3200000 && ini < 0.3 && fim >= vSel.dur - 0.3){
+    Object.assign(ent, {estado: 'ok', p: 1, blob: file.slice(0, file.size, file.type || 'video/mp4')});
+    videos.push(ent); desenhaVids(); fechaVid(); return;
+  }
   videos.push(ent); desenhaVids(); fechaVid(true);
   let ultimoDesenho = 0;
   ent.pronto = recodificar(url, ini, fim, p => { ent.p = p; const t = Date.now(); if (t - ultimoDesenho > 400){ ultimoDesenho = t; desenhaVids(); } }, () => ent.cancelado)
