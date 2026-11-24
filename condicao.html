@@ -64,6 +64,26 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
 .addfoto{width:88px;height:88px;border:1.5px dashed var(--line);border-radius:10px;display:grid;place-items:center;text-align:center;font-size:12px;color:var(--muted);cursor:pointer;background:var(--surface2)}
 .addfoto svg{width:24px;height:24px;display:block;margin:0 auto 4px}
 .err{color:var(--erro);font-size:13px;font-weight:600}
+.vids{display:flex;gap:8px;flex-wrap:wrap}
+.vids figure{margin:0;position:relative;width:120px;height:88px;border-radius:10px;overflow:hidden;background:#0b1620}
+.vids figure img{width:100%;height:100%;object-fit:cover;opacity:.85}
+.vids figure figcaption{position:absolute;left:6px;bottom:5px;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;gap:4px;text-shadow:0 1px 2px #000}
+.vids figure button{position:absolute;top:4px;right:4px;border:0;border-radius:999px;width:26px;height:26px;background:rgba(0,0,0,.65);color:#fff;font-size:16px;line-height:1;cursor:pointer}
+.addvid{width:120px}
+.modal{position:fixed;inset:0;background:rgba(10,20,30,.82);z-index:50;display:grid;place-items:center;padding:16px}
+.modal .cx{background:#fff;border-radius:16px;width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:16px;display:grid;gap:12px}
+.modal h3{margin:0;font-family:"Barlow Condensed",sans-serif;font-size:24px}
+.modal video{width:100%;max-height:46vh;background:#000;border-radius:10px;display:block}
+.corte{display:grid;gap:10px}
+.corte label{display:grid;grid-template-columns:52px 1fr 52px;align-items:center;gap:10px;font-weight:600;font-size:14px}
+.corte input[type=range]{padding:0;accent-color:var(--accent);background:none;border:0}
+.corte output{font-variant-numeric:tabular-nums;text-align:right;color:var(--muted)}
+.trecho{display:flex;justify-content:space-between;align-items:center;background:var(--surface2);border-radius:10px;padding:10px 12px;font-weight:700}
+.trecho.ruim{color:var(--erro)}
+.barraProg{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.barraProg i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.lin{display:flex;gap:8px}.lin .btn{flex:1;font-size:15px;padding:13px}
+.btn.claro{background:var(--surface2);color:var(--ink)}
 .oculto{display:none!important}
 .barra{position:fixed;left:0;right:0;bottom:0;background:rgba(237,240,242,.94);backdrop-filter:blur(6px);padding:12px max(16px,env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
 .btn{font:inherit;font-weight:700;font-size:17px;border:0;border-radius:12px;padding:15px;width:100%;background:var(--accent);color:#fff;cursor:pointer}
@@ -122,6 +142,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
     <div class="f" style="display:grid;gap:6px;font-weight:600;font-size:15px">Fotos <small style="font-weight:400;color:var(--muted);font-size:13px">(opcional, até 3)</small>
       <div class="fotos" id="fotos"><label class="addfoto" id="addFoto"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Adicionar</span><input type="file" id="inFoto" accept="image/*" multiple hidden></label></div>
     </div>
+    <div class="f" style="display:grid;gap:6px;font-weight:600;font-size:15px">Vídeos <small style="font-weight:400;color:var(--muted);font-size:13px">(opcional, até 2, no máximo 20 segundos cada)</small>
+      <div class="vids" id="vids"><label class="addfoto addvid" id="addVid"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg>Adicionar vídeo</span><input type="file" id="inVid" accept="video/*" hidden></label></div>
+    </div>
   </section>
 
   <section class="sec">
@@ -157,6 +180,21 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);b
   <button class="btn sec2" id="btnNovo" type="button" style="margin-top:14px">Registrar outra</button>
 </section>
 </div></main>
+
+<div class="modal oculto" id="mdVid" role="dialog" aria-modal="true" aria-labelledby="mdVidT"><div class="cx">
+  <h3 id="mdVidT">Escolha o trecho do vídeo</h3>
+  <p style="margin:-6px 0 0;color:var(--muted);font-size:14px">Arraste o início e o fim. O trecho pode ter no máximo 20 segundos.</p>
+  <video id="vPrev" playsinline muted preload="metadata"></video>
+  <div class="corte" id="corte">
+    <label>Início<input type="range" id="rIni" min="0" step="0.1" value="0"><output id="oIni">0:00</output></label>
+    <label>Fim<input type="range" id="rFim" min="0" step="0.1" value="0"><output id="oFim">0:00</output></label>
+    <div class="trecho" id="trecho"><span>Trecho selecionado</span><span id="tDur">0 s</span></div>
+  </div>
+  <div id="prog" class="oculto" style="display:grid;gap:6px"><b id="progTxt" style="font-size:14px">Preparando o vídeo…</b><div class="barraProg"><i id="progBar"></i></div><small style="color:var(--muted)">Deixe esta tela aberta. Leva o tempo do trecho.</small></div>
+  <p class="err oculto" id="vidErro"></p>
+  <div class="lin" id="vidBtns"><button class="btn claro" type="button" id="vCancel">Cancelar</button><button class="btn claro" type="button" id="vVer">▶ Ver trecho</button></div>
+  <button class="btn" type="button" id="vUsar">Usar este trecho</button>
+</div></div>
 
 <div class="barra" id="barra"><div class="wrap"><button class="btn" id="btnEnviar" type="button">Enviar registro</button></div></div>
 
@@ -218,6 +256,99 @@ $('#inFoto').addEventListener('change', async e => {
 });
 $('#fotos').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (!b) return; fotos.splice(+b.dataset.i, 1); desenhaFotos(); });
 
+/* vídeos: o pessoal escolhe um trecho de até 20 s; o trecho é recodificado em baixa resolução para caber no banco */
+const MAXV = 20, videos = [];
+let vSel = null;
+const fmtS = t => `${Math.floor(t / 60)}:${pad(Math.floor(t % 60))}`;
+function desenhaVids(){
+  document.querySelectorAll('#vids figure').forEach(f => f.remove());
+  videos.forEach((v, i) => {
+    const f = document.createElement('figure');
+    f.innerHTML = `<img src="${v.thumb}" alt="Vídeo ${i+1}"><figcaption>▶ ${Math.round(v.dur)} s</figcaption><button type="button" aria-label="Remover vídeo ${i+1}" data-v="${i}">×</button>`;
+    $('#vids').insertBefore(f, $('#addVid'));
+  });
+  mostra('#addVid', videos.length < 2);
+}
+$('#vids').addEventListener('click', e => { const b = e.target.closest('button[data-v]'); if (!b) return; videos.splice(+b.dataset.v, 1); desenhaVids(); });
+function atualizaCorte(qual){
+  const ini = $('#rIni'), fim = $('#rFim'); let a = +ini.value, b = +fim.value; const D = vSel.dur;
+  if (qual === 'ini'){ if (b - a > MAXV) b = a + MAXV; if (b <= a) b = Math.min(D, a + 1); }
+  else { if (b - a > MAXV) a = b - MAXV; if (b <= a) a = Math.max(0, b - 1); }
+  ini.value = a; fim.value = b; vSel.ini = a; vSel.fim = b;
+  $('#oIni').textContent = fmtS(a); $('#oFim').textContent = fmtS(b);
+  const d = b - a; $('#tDur').textContent = `${d.toFixed(1).replace('.', ',')} s`; $('#trecho').classList.toggle('ruim', d > MAXV + .05 || d < .9);
+  const v = $('#vPrev'); v.pause(); v.currentTime = qual === 'fim' ? b : a;
+}
+$('#rIni').addEventListener('input', () => atualizaCorte('ini'));
+$('#rFim').addEventListener('input', () => atualizaCorte('fim'));
+$('#inVid').addEventListener('change', e => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  if (vSel && vSel.url) URL.revokeObjectURL(vSel.url);
+  vSel = {file, url: URL.createObjectURL(file), dur: 0, ini: 0, fim: 0};
+  const v = $('#vPrev'); v.src = vSel.url; mostra('#vidErro', false); mostra('#prog', false); mostra('#corte', true); mostra('#vidBtns', true); mostra('#vUsar', true);
+  mostra('#mdVid', true); document.body.style.overflow = 'hidden';
+  v.onloadedmetadata = () => {
+    vSel.dur = isFinite(v.duration) ? v.duration : MAXV;
+    ['rIni','rFim'].forEach(id => $('#' + id).max = vSel.dur.toFixed(1));
+    $('#rIni').value = 0; $('#rFim').value = Math.min(vSel.dur, MAXV).toFixed(1); atualizaCorte('ini');
+  };
+  v.onerror = () => { $('#vidErro').textContent = 'Este vídeo não pôde ser aberto neste celular. Tente outro.'; mostra('#vidErro', true); mostra('#vUsar', false); };
+});
+function fechaVid(){ const v = $('#vPrev'); v.pause(); v.removeAttribute('src'); v.load(); if (vSel && vSel.url) URL.revokeObjectURL(vSel.url); vSel = null; mostra('#mdVid', false); document.body.style.overflow = ''; }
+$('#vCancel').addEventListener('click', fechaVid);
+$('#vVer').addEventListener('click', () => {
+  const v = $('#vPrev'); v.currentTime = vSel.ini; v.play().catch(() => {});
+  v.ontimeupdate = () => { if (v.currentTime >= vSel.fim){ v.pause(); v.ontimeupdate = null; } };
+});
+const esperar = (el, ev) => new Promise(ok => el.addEventListener(ev, ok, {once: true}));
+async function recodificar(url, ini, fim, prog){
+  if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) throw new Error('sem-suporte');
+  const v = document.createElement('video'); v.playsInline = true; v.preload = 'auto'; v.src = url;
+  if (v.readyState < 1) await esperar(v, 'loadedmetadata');
+  const k = Math.min(1, 480 / Math.max(v.videoWidth || 480, v.videoHeight || 480));
+  const cv = document.createElement('canvas'); cv.width = Math.max(2, Math.round((v.videoWidth || 480) * k / 2) * 2); cv.height = Math.max(2, Math.round((v.videoHeight || 270) * k / 2) * 2);
+  const cx = cv.getContext('2d'); const stream = cv.captureStream(24);
+  let ac = null;
+  try { ac = new (window.AudioContext || window.webkitAudioContext)(); const src = ac.createMediaElementSource(v); const dst = ac.createMediaStreamDestination(); src.connect(dst); dst.stream.getAudioTracks().forEach(t => stream.addTrack(t)); if (ac.state === 'suspended') ac.resume().catch(() => {}); } catch { ac = null; }
+  const tipos = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  const mime = tipos.find(t => { try { return MediaRecorder.isTypeSupported(t); } catch { return false; } }) || '';
+  const rec = new MediaRecorder(stream, Object.assign({videoBitsPerSecond: 420000, audioBitsPerSecond: 40000}, mime ? {mimeType: mime} : {}));
+  const partes = []; rec.ondataavailable = e => { if (e.data && e.data.size) partes.push(e.data); };
+  v.currentTime = ini; await esperar(v, 'seeked');
+  cx.drawImage(v, 0, 0, cv.width, cv.height); const thumb = cv.toDataURL('image/jpeg', .6);
+  const fimRec = new Promise(ok => rec.onstop = ok);
+  rec.start(500);
+  try { await v.play(); } catch { v.muted = true; await v.play(); }
+  await new Promise(ok => {
+    const passo = () => {
+      cx.drawImage(v, 0, 0, cv.width, cv.height);
+      prog(Math.min(1, (v.currentTime - ini) / (fim - ini)));
+      if (v.currentTime >= fim || v.ended) return ok();
+      (v.requestVideoFrameCallback ? v.requestVideoFrameCallback(passo) : requestAnimationFrame(passo));
+    };
+    passo();
+  });
+  v.pause(); rec.stop(); await fimRec; stream.getTracks().forEach(t => t.stop()); if (ac) ac.close().catch(() => {});
+  const blob = new Blob(partes, {type: (rec.mimeType || mime || 'video/webm').split(';')[0]});
+  return {blob, thumb, dur: fim - ini};
+}
+$('#vUsar').addEventListener('click', async () => {
+  if (!vSel || !vSel.dur) return;
+  const d = vSel.fim - vSel.ini; if (d > MAXV + .05) return; 
+  $('#vPrev').pause(); mostra('#corte', false); mostra('#vidBtns', false); mostra('#vUsar', false); mostra('#vidErro', false); mostra('#prog', true);
+  try {
+    const r = await recodificar(vSel.url, vSel.ini, vSel.fim, p => { $('#progBar').style.width = (p * 100).toFixed(0) + '%'; $('#progTxt').textContent = `Preparando o vídeo… ${Math.round(p * d)} de ${Math.round(d)} s`; });
+    if (r.blob.size > 3600000) throw new Error('grande');
+    if (r.blob.size < 2000) throw new Error('vazio');
+    videos.push(r); desenhaVids(); fechaVid();
+  } catch (e) {
+    console.error(e);
+    $('#vidErro').textContent = e.message === 'grande' ? 'O vídeo ficou pesado demais. Escolha um trecho menor.' : e.message === 'sem-suporte' ? 'Este navegador não consegue preparar vídeos. Envie só as fotos ou use o Chrome.' : 'Não foi possível preparar este vídeo. Tente outro trecho ou outro vídeo.';
+    mostra('#vidErro', true); mostra('#prog', false); mostra('#corte', true); mostra('#vidBtns', true); mostra('#vUsar', true);
+  }
+});
+const blobB64 = b => new Promise((ok, err) => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = err; f.readAsDataURL(b); });
+
 const val = id => $('#' + id).value.trim();
 const radio = n => (document.querySelector(`input[name="${n}"]:checked`) || {}).value || '';
 function erro(msg, foco){ const e = $('#msgErro'); e.textContent = msg; mostra('#msgErro', true); if (foco){ const el = $(foco); el.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(() => el.focus({preventScroll:true}), 300); } }
@@ -244,8 +375,22 @@ $('#btnEnviar').addEventListener('click', async () => {
     fotos: fotos.slice(0, 3), criadoEm: Date.now()
   };
   const b = $('#btnEnviar'); b.disabled = true; b.textContent = 'Enviando…';
+  const docId = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const comTempo = (p, ms) => Promise.race([p, new Promise((_, r) => setTimeout(() => r(new Error('tempo')), ms))]);
   try {
-    await Promise.race([fs.collection('condicoes').doc(Date.now().toString(36) + Math.random().toString(36).slice(2, 8)).set(reg), new Promise((_, r) => setTimeout(() => r(new Error('tempo')), 20000))]);
+    if (videos.length){
+      reg.videos = [];
+      for (let i = 0; i < videos.length; i++){
+        const v = videos[i], vid = docId + '_v' + (i + 1), b64 = await blobB64(v.blob), TAM = 850000, tot = Math.ceil(b64.length / TAM);
+        for (let n = 0; n < tot; n++){
+          b.textContent = `Enviando vídeo ${i + 1} de ${videos.length}… ${Math.round((n / tot) * 100)}%`;
+          await comTempo(fs.collection('ciMidia').doc(`${vid}_${n}`).set({ref: docId, vid, n, tot, tipo: v.blob.type, b64: b64.slice(n * TAM, (n + 1) * TAM), criadoEm: Date.now()}), 60000);
+        }
+        reg.videos.push({id: vid, tot, tipo: v.blob.type, dur: Math.round(v.dur * 10) / 10, thumb: v.thumb});
+      }
+      b.textContent = 'Enviando registro…';
+    }
+    await comTempo(fs.collection('condicoes').doc(docId).set(reg), 20000);
     try { if (!anon) localStorage.setItem('ci.nome', reg.nome); localStorage.setItem('ci.empresa', $('#empresa').value); } catch {}
     $('#proto').textContent = proto;
     mostra('#form', false); mostra('#barra', false); mostra('#telaOk', true); window.scrollTo(0, 0);
@@ -256,7 +401,7 @@ $('#btnEnviar').addEventListener('click', async () => {
 });
 $('#btnNovo').addEventListener('click', () => {
   ['descricao','sugestao','acaoImediata','localOutro'].forEach(id => $('#' + id).value = '');
-  fotos.length = 0; desenhaFotos(); $('#corrigido').checked = false; mostra('#boxAcao', false);
+  fotos.length = 0; desenhaFotos(); videos.length = 0; desenhaVids(); $('#corrigido').checked = false; mostra('#boxAcao', false);
   document.querySelectorAll('input[name="potencial"]').forEach(r => r.checked = false);
   const n = new Date(); $('#hora').value = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
   mostra('#telaOk', false); mostra('#form', true); mostra('#barra', true); window.scrollTo(0, 0);

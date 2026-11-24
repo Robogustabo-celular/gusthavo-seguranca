@@ -4342,6 +4342,11 @@ boot();
 .ci-thumb{width:54px;height:54px;border-radius:8px;object-fit:cover;background:var(--surface2)}
 .ci-fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .ci-fotos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;display:block}
+.ci-vid{grid-column:span 2}
+.ci-vplay{position:relative;border:0;padding:0;width:100%;border-radius:8px;overflow:hidden;background:#0b1620;cursor:pointer;display:block}
+.ci-vplay img{aspect-ratio:16/10!important;opacity:.8}
+.ci-vplay span{position:absolute;inset:auto auto 8px 8px;background:rgba(0,0,0,.6);color:#fff;font-weight:700;font-size:13px;padding:4px 9px;border-radius:99px}
+.ci-vid video{width:100%;border-radius:8px;background:#000;display:block;max-height:60vh}
 .ci-txt{background:var(--surface2);border-radius:var(--radius);padding:10px 12px;white-space:pre-wrap;line-height:1.4}
 .ci-lbl{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
 .ci-filtro{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
@@ -4403,7 +4408,7 @@ function ciItem(r){
   return `<button class="item ci-item" style="--pc:${p.c}" data-ciact="abrir" data-id="${esc(r.id)}">
     <span><span class="line1"><span class="chip ci-${st}">${CI_ST[st]}</span><span class="chip ci-pot" style="--pc:${p.c}">${esc(p.n)}</span><span class="chip">${esc(CI_TIPO[r.tipo] || 'Condição insegura')}</span></span>
     <strong>${esc(desc)}</strong>
-    <span class="meta">${esc(r.local || '-')} · ${esc(r.empresa || '-')} · ${fmtData(r.data)} ${esc(r.hora || '')}<br>${esc(ciAutor(r))} · ${esc(r.protocolo || '')}${r.responsavel ? ' · Resp.: ' + esc(r.responsavel) : ''}</span></span>
+    <span class="meta">${esc(r.local || '-')} · ${esc(r.empresa || '-')} · ${fmtData(r.data)} ${esc(r.hora || '')}<br>${esc(ciAutor(r))} · ${esc(r.protocolo || '')}${r.responsavel ? ' · Resp.: ' + esc(r.responsavel) : ''}${r.videos && r.videos.length ? ` · ▶ ${plural(r.videos.length, 'vídeo')}` : ''}</span></span>
     ${r.fotos && r.fotos.length ? `<img class="ci-thumb" src="${esc(r.fotos[0])}" alt="">` : '<span></span>'}
   </button>`;
 }
@@ -4422,6 +4427,7 @@ function viewCondicoes(){
     <button class="btn pri" data-ciact="copiar">Copiar link</button>
     <button class="btn" data-ciact="cartaz">${icoPDF()} Cartaz em pé</button>
     <button class="btn" data-ciact="cartazh">${icoPDF()} Cartaz deitado</button>
+    <button class="btn" data-ciact="cartoes">${icoPDF()} 4 por folha</button>
     <a class="btn" href="${esc(CI_URL)}" target="_blank" rel="noopener">Abrir formulário</a>
     ${L.length ? `<button class="btn" data-ciact="relatorio">${icoPDF()} Relatório</button>` : ''}
   </div>
@@ -4454,6 +4460,7 @@ function ciDetalhe(id){
     <div class="ci-lbl">Sugestão de melhoria</div><div class="ci-txt">${esc(r.sugestao || '-')}</div>
     ${r.acaoImediata ? `<div class="ci-lbl">Ação imediata tomada</div><div class="ci-txt">${esc(r.acaoImediata)}</div>` : ''}
     ${r.fotos && r.fotos.length ? `<div class="ci-lbl">Fotos</div><div class="ci-fotos">${r.fotos.map((f, i) => `<a href="${esc(f)}" target="_blank" rel="noopener"><img src="${esc(f)}" alt="Foto ${i + 1}"></a>`).join('')}</div>` : ''}
+    ${r.videos && r.videos.length ? `<div class="ci-lbl">Vídeos</div><div class="ci-fotos">${r.videos.map((v, i) => `<div class="ci-vid" id="civ_${esc(v.id)}"><button type="button" class="ci-vplay" data-ciact="video" data-id="${esc(r.id)}" data-i="${i}" aria-label="Assistir vídeo ${i + 1}"><img src="${esc(v.thumb || '')}" alt=""><span>▶ ${esc(String(Math.round(v.dur || 0)))} s</span></button></div>`).join('')}</div>` : ''}
     <div class="ci-lbl" style="color:var(--accent)">Tratativa da Segurança</div>
     <div style="display:grid;gap:12px">
       <label class="f">Situação<select id="ciSt">${Object.entries(CI_ST).map(([k, t]) => `<option value="${k}" ${st === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
@@ -4549,6 +4556,34 @@ function ciPdfCartazH(){
   doc.text('EMERGÊNCIA: CECOM 0800 285 0193 · RÁDIO FAIXA 03', W / 2, 203, {align:'center'});
   return doc;
 }
+function ciPdfCartoes(){
+  const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4'});
+  const W = 210, H = 297, cw = W / 2, ch = H / 2, q = ciQR();
+  const um = (ox, oy) => {
+    const M = 7, x1 = ox + M, x2 = ox + cw - M;
+    doc.setFillColor(13, 56, 91); doc.rect(ox, oy, cw, 42, 'F');
+    doc.setFillColor(255, 255, 255); doc.roundedRect(x1, oy + 7, 30, 14, 2, 2, 'F');
+    try { doc.addImage(LOGO_PADRAO, 'PNG', x1 + 1.5, oy + 8, 27, 12, undefined, 'FAST'); } catch {}
+    doc.setTextColor(247, 166, 74); doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.text('SEGURANÇA DO TRABALHO', x2, oy + 13, {align:'right'});
+    doc.setTextColor(255, 255, 255); doc.setFontSize(17); doc.text('VIU UM RISCO?', x1, oy + 31);
+    doc.setTextColor(247, 131, 0); doc.text('REGISTRE.', x1, oy + 38.5);
+    for (let x = ox - 6; x < ox + cw; x += 5){ doc.setFillColor(242, 183, 5); doc.triangle(Math.max(ox, x), oy + 42, Math.min(ox + cw, x + 2.5), oy + 42, Math.max(ox, Math.min(ox + cw, x + 0.8)), oy + 44.5, 'F'); }
+    const lado = 56, qx = ox + (cw - lado) / 2, qy = oy + 51;
+    doc.setDrawColor(214, 221, 226); doc.setLineWidth(0.4); doc.roundedRect(qx - 4, qy - 4, lado + 8, lado + 8, 3, 3, 'S');
+    if (q){ const n = q.getModuleCount(), m = lado / n; doc.setFillColor(13, 56, 91);
+      for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (q.isDark(y, x)) doc.rect(qx + x * m, qy + y * m, m + 0.02, m + 0.02, 'F'); }
+    doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.text('Aponte a câmera do celular', ox + cw / 2, qy + lado + 10, {align:'center'});
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(91, 105, 117);
+    doc.text('Condição insegura, ato inseguro ou quase acidente', ox + cw / 2, qy + lado + 14.5, {align:'center'});
+    doc.setFontSize(7); doc.text('Dúvidas: Gusthavo · (94) 9272-0416', ox + cw / 2, oy + ch - 15.5, {align:'center'});
+    doc.setFillColor(198, 47, 40); doc.rect(ox, oy + ch - 11, cw, 11, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.text('EMERGÊNCIA: CECOM 0800 285 0193 · RÁDIO 03', ox + cw / 2, oy + ch - 4.3, {align:'center'});
+  };
+  um(0, 0); um(cw, 0); um(0, ch); um(cw, ch);
+  doc.setDrawColor(150, 150, 150); doc.setLineWidth(0.2); doc.setLineDashPattern([2, 2], 0);
+  doc.line(cw, 0, cw, H); doc.line(0, ch, W, ch); doc.setLineDashPattern([], 0);
+  return doc;
+}
 function ciPdfRegistro(r){
   const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4'});
   const W = 210, M = 14; let y = 42;
@@ -4565,7 +4600,7 @@ function ciPdfRegistro(r){
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(247, 131, 0); doc.text(t.toUpperCase(), M, y); y += 5;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(27, 39, 51);
     const ls = doc.splitTextToSize(txt, W - 2 * M); ls.forEach(l => { if (y > 280){ doc.addPage(); y = 20; } doc.text(l, M, y); y += 5; }); y += 4; };
-  bloco('O que aconteceu', r.descricao); bloco('Sugestão de melhoria', r.sugestao); bloco('Ação imediata', r.acaoImediata); bloco('Tratativa da Segurança', r.tratativa);
+  bloco('O que aconteceu', r.descricao); if (r.videos && r.videos.length) bloco('Vídeos anexados', `${plural(r.videos.length, 'vídeo')} (${r.videos.map(v => Math.round(v.dur || 0) + ' s').join(', ')}). Assista no sistema, no registro ${r.protocolo || ''}.`); bloco('Sugestão de melhoria', r.sugestao); bloco('Ação imediata', r.acaoImediata); bloco('Tratativa da Segurança', r.tratativa);
   (r.fotos || []).forEach((f, i) => { try { const pr = doc.getImageProperties(f); const k = pr.height / pr.width; let w = 85, h = w * k; if (h > 110){ h = 110; w = h / k; }
     if (i % 2 === 0 && y + h > 285){ doc.addPage(); y = 20; }
     doc.addImage(f, 'JPEG', M + (i % 2) * 97, y, w, h); if (i % 2 === 1 || i === r.fotos.length - 1) y += h + 6; } catch {} });
@@ -4618,10 +4653,26 @@ document.addEventListener('click', async e => {
       finally { b.disabled = false; }
       return;
     }
+    case 'video': {
+      const r = CI.lista.find(x => x.id === d.id); const v = r && r.videos && r.videos[+d.i]; if (!v) return;
+      const box = document.getElementById('civ_' + v.id); if (!box) return;
+      box.innerHTML = '<div class="loading" style="padding:18px">Carregando vídeo…</div>';
+      try {
+        const partes = [];
+        for (let n = 0; n < (v.tot || 1); n++){ const sn = await S.db.doc(`ciMidia/${v.id}_${n}`).get(); if (!sn.exists) throw new Error('faltando'); partes.push(sn.data().b64 || ''); }
+        const url = partes.join(''); const bin = atob(url.split(',')[1]); const arr = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) arr[k] = bin.charCodeAt(k);
+        const bu = URL.createObjectURL(new Blob([arr], {type: v.tipo || 'video/mp4'}));
+        const ext = /webm/.test(v.tipo || '') ? 'webm' : 'mp4';
+        box.innerHTML = `<video controls playsinline autoplay src="${bu}"></video><a class="btn" style="margin-top:6px;text-decoration:none" href="${bu}" download="${esc((r.protocolo || 'video') + '_' + (+d.i + 1) + '.' + ext)}">Baixar vídeo</a>`;
+      } catch (e) { console.error(e); box.innerHTML = '<p class="muted" style="font-size:13px">Não foi possível carregar o vídeo.</p>'; }
+      return;
+    }
+    case 'cartoes': gerar(b, async () => ciPdfCartoes(), 'Cartoes_QR_Condicao_Insegura_4_por_folha.pdf'); return;
     case 'excluir': {
       const r = CI.lista.find(x => x.id === d.id); if (!r) return;
       if (!(await confirmar(`Excluir o registro ${r.protocolo || ''}? Isso não pode ser desfeito.`))) return;
-      try { await S.db.doc('condicoes/' + r.id).delete(); fecharSheet(); toast('Registro excluído.'); } catch { toast('Não foi possível excluir.'); }
+      try { for (const v of (r.videos || [])) for (let n = 0; n < (v.tot || 1); n++) await S.db.doc(`ciMidia/${v.id}_${n}`).delete().catch(() => {});
+        await S.db.doc('condicoes/' + r.id).delete(); fecharSheet(); toast('Registro excluído.'); } catch { toast('Não foi possível excluir.'); }
       return;
     }
   }
