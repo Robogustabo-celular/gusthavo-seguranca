@@ -4732,7 +4732,8 @@ if (S.db) ciAssinar(S.db);
 .pr-lin .tl i.op{background:var(--ok)}.pr-lin .tl i.pa{background:var(--interd)}
 .pr-lin .tl em{position:absolute;inset:0;display:flex;align-items:center;padding-left:8px;font-style:normal;font-size:12px;color:var(--muted)}
 .pr-lin .hs{display:grid;text-align:right;font-variant-numeric:tabular-nums}.pr-lin .hs b{font-size:15px;color:var(--ok)}.pr-lin .hs small{font-size:11.5px;color:var(--interd);font-weight:600}
-.pr-lin .mt{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:4px}.pr-lin .mt span{font-size:11.5px;background:color-mix(in srgb,var(--interd) 10%,transparent);color:var(--interd);border-radius:99px;padding:2px 8px;font-weight:600}
+.pr-lin .mt{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:4px}.pr-lin .mt span.av{background:color-mix(in srgb,var(--ok) 13%,transparent);color:var(--ok)}.pr-lin .mt span.ds{background:var(--surface2);color:var(--muted)}
+.pr-dss{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.pr-dss input[type=text],.pr-dss #prDssTema{flex:1 1 200px}.sw2{display:flex;gap:8px;align-items:center;font-weight:600}.sw2 input{width:20px;height:20px;accent-color:var(--brand)}.pr-lin .mt span{font-size:11.5px;background:color-mix(in srgb,var(--interd) 10%,transparent);color:var(--interd);border-radius:99px;padding:2px 8px;font-weight:600}
 @media (max-width:520px){.pr-lin,.pr-esc{grid-template-columns:48px minmax(0,1fr) 62px;gap:6px}.pr-lin{padding:7px 8px}.pr-esc{padding:0 9px 0 14px}.pr-modos button{padding-left:4px;padding-right:4px;font-size:12.5px}}
 .pr-leg{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
 .pr-leg span::before{content:"";display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;background:var(--c)}
@@ -4757,7 +4758,7 @@ if (S.db) ciAssinar(S.db);
 .ci-feed{display:grid;gap:8px;margin-top:10px}
 .ci-feed button{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);border-left:4px solid var(--pc);border-radius:10px;background:var(--surface);padding:9px 12px;font:inherit;color:var(--ink);cursor:pointer;width:100%}
 .ci-feed b{font-size:14px}.ci-feed span{font-size:13px;color:var(--muted)}
-@media (max-width:520px){.pr-kpis{grid-template-columns:repeat(2,1fr)}.pr-dia{padding:4px 5px;border-radius:8px}.pr-dia b{font-size:13px}.pr-dia small{font-size:9.5px}.pr-per .lin{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.pr-per .tg{grid-column:1/-1}}
+@media (max-width:520px){.pr-kpis{grid-template-columns:repeat(2,1fr)}.pr-dia{padding:4px 5px;border-radius:8px}.pr-dia b{font-size:13px}.pr-dia small{font-size:9.5px}.pr-per{position:relative}.pr-per .lin{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.pr-per .tg{grid-column:1/-1;justify-self:start}.pr-per [data-pract=delper]{position:absolute;top:8px;right:8px}}
 </style>
 <script>
 "use strict";
@@ -4765,7 +4766,11 @@ if (S.db) ciAssinar(S.db);
 const PR = {dias:{}, ok:false, sub:false, mes:null, ed:null};
 const PR_INICIO = '2026-11';
 const PR_MOTIVOS = ['Condições climáticas (chuva)', 'Material molhado', 'Manutenção corretiva', 'Manutenção preventiva', 'Ausência de peça', 'Ausência de documentação', 'Abastecimento', 'Melhoria do canteiro', 'Realização de 5S / limpeza', 'DSS / treinamento', 'Falta de material / frente de lavra', 'Falta de equipamento de apoio', 'Falta de energia', 'Aguardando liberação', 'Interdição / segurança', 'Horário de refeição', 'Outro'];
-const PR_ATIV = ['5S', 'DSS', 'Treinamento', 'Limpeza', 'Manutenção preventiva', 'Inspeção', 'Abastecimento'];
+const PR_ATIV = ['DSS', '5S', 'Treinamento', 'Limpeza', 'Manutenção preventiva', 'Inspeção', 'Abastecimento', 'Melhoria do canteiro'];
+const PR_AVAL = ['Dia produtivo', 'Produção parcial', 'Baixa produção', 'Sem produção'];
+const PR_HORAS = (() => { const o = []; for (let m = 5 * 60; m <= 23 * 60 + 30; m += 30) o.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`); return o; })();
+const prSelHora = (attrs, v) => { const ops = PR_HORAS.includes(v) || !v ? PR_HORAS : [...PR_HORAS, v].sort(); return `<select ${attrs}><option value="">--:--</option>${ops.map(h => `<option ${h === v ? 'selected' : ''}>${h}</option>`).join('')}</select>`; };
+const prAvalAuto = r => ({op:'Dia produtivo', parcial:'Produção parcial', parada:'Sem produção'})[r.sit] || '';
 const PR_MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 const prHoje = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 PR.modo = 'semana'; PR.ref = prHoje(); PR.de = ''; PR.ate = '';
@@ -4842,7 +4847,7 @@ function prLinhaDia(id, esc0, hoje){
     <span class="dt"><b>${sem}</b>${fmtData(id).slice(0, 5)}</span>
     <span class="tl">${segs || `<em>${r.sit === 'sem' ? 'Sem registro · toque para registrar' : 'Sem horários'}</em>`}</span>
     <span class="hs"><b>${r.op ? prHoras(r.op) : '–'}</b>${r.pa ? `<small>${prHoras(r.pa)} parada</small>` : ''}</span>
-    ${mots.length || (d && d.fotos && d.fotos.length) ? `<span class="mt">${mots.map(m => `<span>${esc(m)}</span>`).join('')}${d && d.fotos && d.fotos.length ? '<span>📷 evidência</span>' : ''}</span>` : ''}
+    ${d ? `<span class="mt">${d.avaliacao ? `<span class="av">${esc(d.avaliacao)}</span>` : ''}${d.dss && d.dss.feito ? `<span class="ds">DSS ${esc(d.dss.hora || '')}</span>` : ''}${mots.map(m => `<span>${esc(m)}</span>`).join('')}${d.fotos && d.fotos.length ? '<span class="ds">📷 evidência</span>' : ''}</span>` : ''}
   </button>`;
 }
 function viewProducao(){
@@ -4883,8 +4888,8 @@ function prPeriodoHTML(p, i){
   return `<div class="pr-per" style="--c:${c}">
     <div class="lin">
       <div class="tg" role="group" aria-label="Situação do período"><button type="button" aria-pressed="${p.tipo !== 'parada'}" data-pract="tipo" data-i="${i}" data-v="operando">Operando</button><button type="button" aria-pressed="${p.tipo === 'parada'}" data-pract="tipo" data-i="${i}" data-v="parada">Parada</button></div>
-      <label class="f">Das<input type="time" data-prf="ini" data-i="${i}" value="${esc(p.ini || '')}"></label>
-      <label class="f">Até<input type="time" data-prf="fim" data-i="${i}" value="${esc(p.fim || '')}"></label>
+      <label class="f">Das${prSelHora(`data-prf="ini" data-i="${i}"`, p.ini || '')}</label>
+      <label class="f">Até${prSelHora(`data-prf="fim" data-i="${i}"`, p.fim || '')}</label>
       <button type="button" class="btn" data-pract="delper" data-i="${i}" aria-label="Remover período" style="padding:10px 12px">✕</button>
     </div>
     ${p.tipo === 'parada' ? `<label class="f">Motivo da parada<select data-prf="motivo" data-i="${i}"><option value="">Selecione</option>${PR_MOTIVOS.map(mo => `<option ${p.motivo === mo ? 'selected' : ''}>${esc(mo)}</option>`).join('')}</select></label>` : ''}
@@ -4898,21 +4903,25 @@ function prCorpo(){
     <div class="ci-lbl">Períodos do dia</div>
     <div style="display:grid;gap:8px">${e.periodos.map(prPeriodoHTML).join('') || '<p class="muted" style="margin:0">Nenhum período. Use os botões abaixo.</p>'}</div>
     <div class="actions" style="margin:8px 0 0"><button class="btn" data-pract="addper" data-v="operando">+ Operando</button><button class="btn" data-pract="addper" data-v="parada">+ Parada</button></div>
-    <div class="actions" style="margin:6px 0 0"><button class="btn" data-pract="preset" data-v="normal" style="font-size:13px">Dia normal (07:00 às 17:00)</button><button class="btn" data-pract="preset" data-v="parado" style="font-size:13px">Dia todo parado</button></div>
-    <div class="ci-lbl">Atividades realizadas</div>
+    <div class="pr-chips" style="margin-top:8px"><span class="muted" style="font-size:13px;align-self:center">Atalhos:</span><button type="button" data-pract="rapido" data-v="manha">+ Manhã 07:00–11:00</button><button type="button" data-pract="rapido" data-v="tarde">+ Tarde 13:00–17:00</button><button type="button" data-pract="preset" data-v="normal">Dia normal 07:00–17:00</button><button type="button" data-pract="preset" data-v="parado">Dia todo parado</button></div>
+    <div class="ci-lbl">DSS do dia</div>
+    <div class="pr-dss"><label class="sw2"><input type="checkbox" id="prDssOk" ${e.dss && e.dss.feito === false ? '' : 'checked'}> DSS realizado</label><label class="f" style="flex-direction:row;align-items:center;gap:8px;display:flex">Início ${prSelHora('id="prDssHora"', (e.dss && e.dss.hora) || '07:00')}</label><input id="prDssTema" value="${esc((e.dss && e.dss.tema) || '')}" placeholder="Tema do DSS (opcional)"></div>
+    <div class="ci-lbl">Como foi o dia</div>
+    <div class="pr-chips">${PR_AVAL.map(a => { const sel = (e.avaliacao || prAvalAuto(r)) === a; return `<button type="button" aria-pressed="${sel}" data-pract="aval" data-v="${esc(a)}">${esc(a)}</button>`; }).join('')}</div>
+    <div class="ci-lbl">Atividades realizadas <small style="text-transform:none;letter-spacing:0;font-weight:500">(pode marcar mais de uma)</small></div>
     <div class="pr-chips">${PR_ATIV.map(a => `<button type="button" aria-pressed="${(e.atividades || []).includes(a)}" data-pract="ativ" data-v="${esc(a)}">${esc(a)}</button>`).join('')}</div>
     <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:10px;margin-top:12px">
       <label class="f">Produção (t)<input id="prTon" type="number" inputmode="decimal" min="0" step="0.1" value="${e.toneladas == null ? '' : esc(String(e.toneladas))}" placeholder="Opcional"></label>
       <label class="f">Equipe no dia<input id="prEquipe" value="${esc(e.equipe || '')}" placeholder="Ex.: 6 pessoas, turno A"></label>
     </div>
-    <label class="f" style="margin-top:10px">Como foi o dia<textarea id="prObs" rows="3" placeholder="Resumo do dia, ocorrências, o que foi feito">${esc(e.obs || '')}</textarea></label>
+    <label class="f" style="margin-top:10px">Observações do dia<textarea id="prObs" rows="3" placeholder="Ocorrências, o que foi feito, quem visitou">${esc(e.obs || '')}</textarea></label>
     <div class="ci-lbl">Evidências (fotos)</div>
     <div class="pr-fotos">${(e.fotos || []).map((f, i) => `<figure><img src="${esc(f)}" alt="Evidência ${i + 1}"><button type="button" data-pract="delfoto" data-i="${i}" aria-label="Remover foto">×</button></figure>`).join('')}${(e.fotos || []).length < 4 ? `<label>📷<br>Adicionar<input type="file" id="prInFoto" accept="image/*" multiple hidden></label>` : ''}</div>
     ${PR.dias[e.data] ? `<button class="btn danger block" data-pract="excluir" style="margin-top:16px">Excluir registro do dia</button>` : ''}`;
 }
 function prAbrir(id){
   const d = PR.dias[id];
-  PR.ed = d ? Object.assign({data: id}, clone(d)) : {data: id, periodos: [], atividades: [], fotos: [], obs: '', toneladas: null, equipe: ''};
+  PR.ed = d ? Object.assign({data: id}, clone(d)) : {data: id, periodos: [], atividades: ['DSS', '5S'], fotos: [], obs: '', toneladas: null, equipe: '', dss: {feito: true, hora: '07:00', tema: ''}, avaliacao: ''};
   PR.ed.periodos = PR.ed.periodos || []; PR.ed.fotos = PR.ed.fotos || []; PR.ed.atividades = PR.ed.atividades || [];
   SHEET = {tipo:'prdia', id};
   abrirSheet('prdia', 'Produção · ' + fmtData(id), prCorpo(), `<div class="actions" style="margin:0"><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-pract="salvar">Salvar dia</button></div>`);
@@ -4923,6 +4932,7 @@ function prLerCampos(){
   const t = document.getElementById('prTon'); if (t) e.toneladas = t.value === '' ? null : +t.value;
   const q = document.getElementById('prEquipe'); if (q) e.equipe = q.value.trim();
   const o = document.getElementById('prObs'); if (o) e.obs = o.value.trim();
+  const dk = document.getElementById('prDssOk'); if (dk) e.dss = {feito: dk.checked, hora: (document.getElementById('prDssHora') || {}).value || '', tema: ((document.getElementById('prDssTema') || {}).value || '').trim()};
 }
 function prRedesenhar(){
   prLerCampos(); const alvo = document.getElementById('prRes'); if (!alvo) return;
@@ -4954,7 +4964,7 @@ function prPdfPeriodo(){
   head();
   st.dias.forEach((id, i) => {
     const d = PR.dias[id], r = prResumo(d);
-    const det = d ? [Object.keys(r.mot).join(', '), (d.atividades || []).join(', '), d.obs].filter(Boolean).join(' · ') : 'Sem registro';
+    const det = d ? [d.avaliacao, d.dss && d.dss.feito ? 'DSS ' + (d.dss.hora || '') + (d.dss.tema ? ' (' + d.dss.tema + ')' : '') : '', Object.keys(r.mot).join(', '), (d.atividades || []).filter(a => a !== 'DSS').join(', '), d.obs].filter(Boolean).join(' · ') : 'Sem registro';
     const ls = doc.splitTextToSize(det || '-', 94).slice(0, 3); const h = Math.max(6, ls.length * 3.8 + 2.4);
     if (yy + h > 282){ doc.addPage(); yy = 18; head(); }
     if (i % 2){ doc.setFillColor(244, 246, 248); doc.rect(M, yy - 3.8, W - 2 * M, h, 'F'); }
@@ -4984,13 +4994,17 @@ document.addEventListener('click', async e => {
     case 'delper': prLerCampos(); PR.ed.periodos.splice(+d.i, 1); prRedesenhar(); return;
     case 'addper': { prLerCampos(); const ult = PR.ed.periodos[PR.ed.periodos.length - 1]; PR.ed.periodos.push({tipo: d.v, ini: ult ? ult.fim : '07:00', fim: '', motivo: '', obs: ''}); prRedesenhar(); return; }
     case 'preset': prLerCampos(); PR.ed.periodos = d.v === 'normal' ? [{tipo:'operando', ini:'07:00', fim:'17:00', motivo:'', obs:''}] : [{tipo:'parada', ini:'07:00', fim:'17:00', motivo:'', obs:''}]; prRedesenhar(); return;
+    case 'rapido': { prLerCampos(); PR.ed.periodos.push(d.v === 'manha' ? {tipo:'operando', ini:'07:00', fim:'11:00', motivo:'', obs:''} : {tipo:'operando', ini:'13:00', fim:'17:00', motivo:'', obs:''}); PR.ed.periodos.sort((a, b) => (prMin(a.ini) || 0) - (prMin(b.ini) || 0)); prRedesenhar(); return; }
+    case 'aval': prLerCampos(); PR.ed.avaliacao = d.v; prRedesenhar(); return;
     case 'ativ': { prLerCampos(); const a = PR.ed.atividades, i = a.indexOf(d.v); if (i >= 0) a.splice(i, 1); else a.push(d.v); prRedesenhar(); return; }
     case 'delfoto': prLerCampos(); PR.ed.fotos.splice(+d.i, 1); prRedesenhar(); return;
     case 'salvar': {
       prLerCampos(); const ed = PR.ed;
       for (const p of ed.periodos){ if (!p.ini || !p.fim) return toast('Preencha o início e o fim de todos os períodos.'); if (p.tipo === 'parada' && !p.motivo) return toast('Escolha o motivo de cada parada.'); }
       if (!ed.periodos.length && !ed.obs) return toast('Adicione pelo menos um período ou descreva o dia.');
-      const doc = clone(ed); delete doc.data; doc.atualizadoEm = Date.now();
+      ed.periodos.sort((a, b) => (prMin(a.ini) || 0) - (prMin(b.ini) || 0));
+      const doc = clone(ed); delete doc.data; doc.avaliacao = ed.avaliacao || prAvalAuto(prResumo(ed)); doc.atualizadoEm = Date.now();
+      if (doc.dss && doc.dss.feito && !doc.atividades.includes('DSS')) doc.atividades.unshift('DSS');
       b.disabled = true;
       try { await S.db.doc('producao/' + ed.data).set(doc); fecharSheet(); toast('Dia salvo.'); } catch (err) { console.error(err); toast('Não foi possível salvar. Tente de novo.'); } finally { b.disabled = false; }
       return;
@@ -5002,6 +5016,7 @@ document.addEventListener('click', async e => {
   }
 });
 document.addEventListener('change', e => { if (e.target.id === 'prDe' || e.target.id === 'prAte'){ PR[e.target.id === 'prDe' ? 'de' : 'ate'] = e.target.value; render(); } });
+document.addEventListener('change', e => { if (e.target.matches('[data-prf="ini"],[data-prf="fim"]') && PR.ed){ prLerCampos(); const r = document.getElementById('prRes'); if (r) r.innerHTML = prResTxt(prResumo(PR.ed)); } });
 document.addEventListener('input', e => { if (e.target.matches('[data-prf="ini"],[data-prf="fim"]') && PR.ed){ prLerCampos(); const r = document.getElementById('prRes'); if (r) r.innerHTML = prResTxt(prResumo(PR.ed)); } });
 document.addEventListener('change', async e => {
   if (e.target.id !== 'prInFoto' || !PR.ed) return; prLerCampos();
