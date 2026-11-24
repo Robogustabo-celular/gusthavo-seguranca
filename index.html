@@ -4678,7 +4678,8 @@ document.addEventListener('click', async e => {
         const url = partes.join(''); const bin = atob(url.split(',')[1]); const arr = new Uint8Array(bin.length); for (let k = 0; k < bin.length; k++) arr[k] = bin.charCodeAt(k);
         const bu = URL.createObjectURL(new Blob([arr], {type: v.tipo || 'video/mp4'}));
         const ext = /webm/.test(v.tipo || '') ? 'webm' : 'mp4';
-        box.innerHTML = `<video controls playsinline autoplay src="${bu}"></video><a class="btn" style="margin-top:6px;text-decoration:none" href="${bu}" download="${esc((r.protocolo || 'video') + '_' + (+d.i + 1) + '.' + ext)}">Baixar vídeo</a>`;
+        box.innerHTML = `<video controls playsinline src="${bu}#t=${v.ini || 0}${v.fim ? ',' + v.fim : ''}"></video>${v.fim ? `<p class="muted" style="font-size:12px;margin:4px 0 0">Trecho marcado: ${Math.floor((v.ini || 0) / 60)}:${String(Math.floor((v.ini || 0) % 60)).padStart(2, '0')} a ${Math.floor(v.fim / 60)}:${String(Math.floor(v.fim % 60)).padStart(2, '0')}</p>` : ''}<a class="btn" style="margin-top:6px;text-decoration:none" href="${bu}" download="${esc((r.protocolo || 'video') + '_' + (+d.i + 1) + '.' + ext)}">Baixar vídeo</a>`;
+        const ve = box.querySelector('video'); if (ve && v.fim){ ve.addEventListener('loadedmetadata', () => { try { ve.currentTime = v.ini || 0; } catch {} }, {once: true}); ve.addEventListener('timeupdate', () => { if (ve.currentTime > v.fim + 0.2 && !ve.dataset.livre){ ve.pause(); ve.dataset.livre = '1'; } }); }
       } catch (e) { console.error(e); box.innerHTML = '<p class="muted" style="font-size:13px">Não foi possível carregar o vídeo.</p>'; }
       return;
     }

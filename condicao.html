@@ -389,22 +389,11 @@ function quadroAtual(){
 function usarTrecho(){
   if (!vSel || !vSel.dur) return;
   const d = vSel.fim - vSel.ini; if (d > MAXV + .05 || d < .5) return;
-  const ent = {estado: 'prep', p: 0, dur: d, thumb: quadroAtual()};
-  const url = vSel.url, ini = vSel.ini, fim = vSel.fim, file = vSel.file;
-  if (file && file.size <= 3200000 && ini < 0.3 && fim >= vSel.dur - 0.3){
-    Object.assign(ent, {estado: 'ok', p: 1, blob: file.slice(0, file.size, file.type || 'video/mp4')});
-    videos.push(ent); desenhaVids(); fechaVid(); return;
-  }
-  videos.push(ent); desenhaVids(); fechaVid(true);
-  let ultimoDesenho = 0;
-  ent.pronto = recodificar(url, ini, fim, p => { ent.p = p; const t = Date.now(); if (t - ultimoDesenho > 400){ ultimoDesenho = t; desenhaVids(); } }, () => ent.cancelado)
-    .then(r => {
-      if (r.blob.size > 3600000) throw new Error('grande');
-      if (r.blob.size < 2000) throw new Error('vazio');
-      Object.assign(ent, r, {estado: 'ok', p: 1});
-    })
-    .catch(e => { console.error(e); ent.estado = 'erro'; ent.msg = e.message === 'grande' ? 'O vídeo ficou pesado demais. Escolha um trecho menor.' : e.message === 'sem-suporte' ? 'Este navegador não consegue preparar vídeos. Envie só as fotos ou use o Chrome.' : 'Não foi possível preparar o vídeo. Remova e tente de novo.'; if (!ent.cancelado) erro(ent.msg); })
-    .finally(() => { URL.revokeObjectURL(url); desenhaVids(); });
+  const file = vSel.file;
+  if (file.size > 24000000){ $('#vidErro').textContent = 'Este vídeo é muito pesado (mais de 24 MB). Grave um vídeo mais curto, de até 20 segundos.'; mostra('#vidErro', true); return; }
+  /* sem recodificar: o vídeo original vai inteiro e o trecho escolhido fica marcado (início e fim) */
+  videos.push({estado: 'ok', p: 1, dur: d, ini: Math.round(vSel.ini * 10) / 10, fim: Math.round(vSel.fim * 10) / 10, thumb: quadroAtual(), blob: file.slice(0, file.size, file.type || 'video/mp4')});
+  desenhaVids(); fechaVid();
 }
 $('#vUsar').addEventListener('click', usarTrecho);
 const blobB64 = b => new Promise((ok, err) => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = err; f.readAsDataURL(b); });
@@ -518,9 +507,10 @@ $('#btnEnviar').addEventListener('click', async () => {
         const v = videos[i], vid = docId + '_v' + (i + 1), b64 = await blobB64(v.blob), TAM = 850000, tot = Math.ceil(b64.length / TAM);
         for (let n = 0; n < tot; n++){
           b.textContent = `Enviando vídeo ${i + 1} de ${videos.length}… ${Math.round((n / tot) * 100)}%`;
+          if (tot > 40) throw new Error('video-grande');
           await comTempo(fs.collection('ciMidia').doc(`${vid}_${n}`).set({ref: docId, vid, n, tot, tipo: v.blob.type, b64: b64.slice(n * TAM, (n + 1) * TAM), criadoEm: Date.now()}), 60000);
         }
-        reg.videos.push({id: vid, tot, tipo: v.blob.type, dur: Math.round(v.dur * 10) / 10, thumb: v.thumb});
+        reg.videos.push({id: vid, tot, tipo: v.blob.type || 'video/mp4', dur: Math.round(v.dur * 10) / 10, ini: v.ini || 0, fim: v.fim || Math.round(v.dur * 10) / 10, thumb: v.thumb || ''});
       }
       b.textContent = 'Enviando registro…';
     }
@@ -531,6 +521,7 @@ $('#btnEnviar').addEventListener('click', async () => {
     mostra('#form', false); mostra('#barra', false); mostra('#telaOk', true); window.scrollTo(0, 0);
   } catch (e) {
     console.error(e);
+    if (e && e.message === 'video-grande') return erro('Um dos vídeos é pesado demais. Remova e grave um vídeo mais curto.', '#vids');
     if (e && e.message === 'video-erro') return erro('Um dos vídeos não ficou pronto. Remova o vídeo marcado em vermelho e tente de novo.', '#vids');
     erro(e && e.code === 'permission-denied' ? 'O sistema ainda não está liberado para receber registros. Avise a Segurança do Trabalho.' : 'Não foi possível enviar. Verifique a internet e tente de novo.');
   } finally { b.disabled = false; b.textContent = 'Enviar registro'; }
