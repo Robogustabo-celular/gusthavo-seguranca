@@ -4793,6 +4793,8 @@ function prMontarPeriodos(e){ const per = []; let ini = null;
   for (let h = PR_H0; h <= PR_H1; h++){ const on = h < PR_H1 && e.horas.has(h); if (on && ini == null) ini = h; if (!on && ini != null){ per.push({tipo:'operando', ini: prHH(ini), fim: prHH(h), motivo:'', obs:''}); ini = null; } }
   prLacunas(e.data, e.horas).forEach(([a, b]) => { const k = `${a}-${b}`, mo = (e.motLac || {})[k] || ''; if (mo) per.push({tipo:'parada', ini: prHH(a), fim: prHH(b), motivo: mo, obs:''}); });
   return per.sort((x, y) => prMin(x.ini) - prMin(y.ini)); }
+const PR_EQUIP = ['Peneira', 'Britador', 'Escavadeira', 'Pá-carregadeira', 'Gerador', 'Caminhão caçamba', 'Comboio', 'Correia transportadora', 'Outro equipamento'];
+const prOpcoesMotivo = v => `${PR_MOTIVOS.map(mo => `<option ${v === mo ? 'selected' : ''}>${esc(mo)}</option>`).join('')}<optgroup label="Equipamento danificado">${PR_EQUIP.map(eq => { const t = 'Equipamento danificado · ' + eq; return `<option value="${esc(t)}" ${v === t ? 'selected' : ''}>${esc(eq)} danificado(a)</option>`; }).join('')}</optgroup>`;
 const PR_AVAL = ['Dia produtivo', 'Produção parcial', 'Baixa produção', 'Sem produção'];
 const PR_HORAS = (() => { const o = []; for (let m = 5 * 60; m <= 23 * 60 + 30; m += 30) o.push(`${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`); return o; })();
 const prSelHora = (attrs, v) => { const ops = PR_HORAS.includes(v) || !v ? PR_HORAS : [...PR_HORAS, v].sort(); return `<select ${attrs}><option value="">--:--</option>${ops.map(h => `<option ${h === v ? 'selected' : ''}>${h}</option>`).join('')}</select>`; };
@@ -4892,7 +4894,7 @@ function viewProducao(){
     <div class="kpi pr-kpi-main" style="--c:var(--ok)"><b>${prHoras(st.op)}</b><span>Horas produzidas no período</span></div>
     <div class="kpi" style="--c:var(--ok)"><b>${st.dOp + st.dParc}<small style="font-size:14px;color:var(--muted)"> / ${st.dias.length}</small></b><span>Dias com produção</span></div>
     <div class="kpi" style="--c:var(--brand)"><b>${st.dOp + st.dParc ? prHoras(st.op / (st.dOp + st.dParc)) : '–'}</b><span>Média por dia produzido</span></div>
-    <div class="kpi" style="--c:var(--interd)"><b>${prHoras(st.pa)}</b><span>Paradas com motivo</span></div>
+    <div class="kpi" style="--c:var(--interd)"><b>${prHoras(st.pa)}</b><span>Horas paradas</span></div>
   </div>
   <div class="actions" style="margin:0 0 12px">
     <button class="btn pri" data-pract="dia" data-id="${hoje}">${PR.dias[hoje] ? 'Editar o dia de hoje' : 'Registrar o dia de hoje'}</button>
@@ -4905,7 +4907,7 @@ function viewProducao(){
     <div class="pr-leg"><span style="--c:var(--ok)">Produzindo</span><span style="--c:var(--interd)">Parada com motivo</span></div>
   </section>
   <section class="panel" style="margin-top:12px">
-    <h2>Por que a planta parou <small>horas no período</small></h2>
+    <h2>Motivos das horas paradas <small>horas no período</small></h2>
     ${mots.length ? mots.map(([k, v]) => `<div class="pr-bar"><span>${esc(k)}</span><span class="tr"><i style="width:${Math.max(4, v / maxM * 100)}%"></i></span><b>${prHoras(v)}</b></div>`).join('') : '<div class="empty" style="padding:14px"><b>Nenhuma parada no período</b>As paradas e os motivos aparecem aqui.</div>'}
     ${Object.keys(st.ativ).length ? `<h2 style="margin-top:14px">Atividades realizadas</h2><div class="pr-chips">${Object.entries(st.ativ).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class="chip">${esc(k)} · ${plural(v, 'dia')}</span>`).join('')}</div>` : ''}
     ${st.temTon ? `<p class="muted" style="margin:12px 0 0">Produção informada no período: <b>${(Math.round(st.ton * 10) / 10).toLocaleString('pt-BR')} t</b></p>` : ''}
@@ -4921,7 +4923,7 @@ function prPeriodoHTML(p, i){
       <label class="f">Até${prSelHora(`data-prf="fim" data-i="${i}"`, p.fim || '')}</label>
       <button type="button" class="btn" data-pract="delper" data-i="${i}" aria-label="Remover período" style="padding:10px 12px">✕</button>
     </div>
-    ${p.tipo === 'parada' ? `<label class="f">Motivo da parada<select data-prf="motivo" data-i="${i}"><option value="">Selecione</option>${PR_MOTIVOS.map(mo => `<option ${p.motivo === mo ? 'selected' : ''}>${esc(mo)}</option>`).join('')}</select></label>` : ''}
+    ${p.tipo === 'parada' ? `<label class="f">Motivo da parada<select data-prf="motivo" data-i="${i}"><option value="">Selecione</option>${prOpcoesMotivo(p.motivo)}</select></label>` : ''}
     <input data-prf="obs" data-i="${i}" value="${esc(p.obs || '')}" placeholder="${p.tipo === 'parada' ? 'Detalhe da parada (opcional)' : 'Observação (opcional)'}">
   </div>`;
 }
@@ -4933,7 +4935,7 @@ function prCorpo(){
     <div class="pr-grade">${Array.from({length: PR_H1 - PR_H0}, (_, k) => { const h = PR_H0 + k, jr = prJornada(e.data), dentro = jr && h >= prMin(jr[0]) / 60 && h < prMin(jr[1]) / 60;
       return `<button type="button" aria-pressed="${e.horas.has(h)}" data-pract="hora" data-v="${h}"><b>${String(h).padStart(2, '0')}h</b><small>até ${String(h + 1).padStart(2, '0')}h</small></button>`; }).join('')}</div>
     <div class="pr-chips" style="margin-top:8px"><button type="button" data-pract="todas">07h às 17h</button><button type="button" data-pract="limpar">Limpar</button></div>
-    ${(() => { const lac = prLacunas(e.data, e.horas); return lac.length && e.horas.size ? `<div class="ci-lbl">Horas sem produção <small style="text-transform:none;letter-spacing:0;font-weight:500">(opcional: informe o motivo para registrar como parada)</small></div><div style="display:grid;gap:8px">${lac.map(([a, b]) => { const k = `${a}-${b}`, v = (e.motLac || {})[k] || ''; return `<label class="pr-lac"><span>${prHH(a)} às ${prHH(b)} · ${prHoras(b - a)}</span><select data-prlac="${k}"><option value="">Não informar</option>${PR_MOTIVOS.map(mo => `<option ${v === mo ? 'selected' : ''}>${esc(mo)}</option>`).join('')}</select></label>`; }).join('')}</div>` : !e.horas.size && prJornada(e.data) ? `<div class="ci-lbl">Planta não produziu?</div><label class="pr-lac"><span>Dia todo sem produção</span><select data-prlac="dia"><option value="">Sem motivo informado</option>${PR_MOTIVOS.map(mo => `<option ${((e.motLac || {}).dia || '') === mo ? 'selected' : ''}>${esc(mo)}</option>`).join('')}</select></label>` : ''; })()}
+    ${(() => { const lac = prLacunas(e.data, e.horas); return lac.length && e.horas.size ? `<div class="ci-lbl">Horas sem produção <small style="text-transform:none;letter-spacing:0;font-weight:500">(opcional: informe o motivo para registrar como parada)</small></div><div style="display:grid;gap:8px">${lac.map(([a, b]) => { const k = `${a}-${b}`, v = (e.motLac || {})[k] || ''; return `<label class="pr-lac"><span>${prHH(a)} às ${prHH(b)} · ${prHoras(b - a)}</span><select data-prlac="${k}"><option value="">Não informar</option>${prOpcoesMotivo(v)}</select></label>`; }).join('')}</div>` : !e.horas.size && prJornada(e.data) ? `<div class="ci-lbl">Planta não produziu?</div><label class="pr-lac"><span>Dia todo sem produção</span><select data-prlac="dia"><option value="">Sem motivo informado</option>${prOpcoesMotivo((e.motLac || {}).dia || '')}</select></label>` : ''; })()}
     <div class="ci-lbl">DSS do dia</div>
     <div class="pr-dss"><label class="sw2"><input type="checkbox" id="prDssOk" ${e.dss && e.dss.feito === false ? '' : 'checked'}> DSS realizado</label><label class="f" style="flex-direction:row;align-items:center;gap:8px;display:flex">Início ${prSelHora('id="prDssHora"', (e.dss && e.dss.hora) || '07:00')}</label><input id="prDssTema" value="${esc((e.dss && e.dss.tema) || '')}" placeholder="Tema do DSS (opcional)"></div>
     <div class="ci-lbl">Como foi o dia</div>
@@ -4981,41 +4983,65 @@ function prReduz(file){
 }
 function prPdfPeriodo(){
   const {jsPDF} = window.jspdf; const doc = new jsPDF({unit:'mm', format:'a4'});
-  const {ini, fim} = prIntervalo(), W = 210, M = 14, st = prStatsDias(prDias(ini, fim));
+  const {ini, fim} = prIntervalo(), W = 210, M = 14, st = prStatsDias(prDias(ini, fim)), dp = st.dOp + st.dParc;
+  const VERDE = [46, 139, 87], VERM = [198, 47, 40], AZUL = [13, 56, 91], TXT = [27, 39, 51], CIN = [91, 105, 117], FUN = [244, 246, 248];
   ciCab(doc, 'Relatório de produção da planta', `${fmtData(ini)} a ${fmtData(fim)} · Britagem Serra Norte · gerado em ${fmtDH(new Date())}`);
-  let yy = 44;
-  const kp = [['Horas produzidas', prHoras(st.op), [46, 139, 87]], ['Dias com produção', `${st.dOp + st.dParc} de ${st.dias.length}`, [46, 139, 87]], ['Média por dia produzido', st.dOp + st.dParc ? prHoras(st.op / (st.dOp + st.dParc)) : '–', [13, 56, 91]], ['Paradas com motivo', prHoras(st.pa), [198, 47, 40]]];
+  let y = 42;
+  /* cartões */
+  const kp = [['Horas produzidas', prHoras(st.op), VERDE], ['Horas paradas', prHoras(st.pa), VERM], ['Dias com produção', `${dp} de ${st.dias.length}`, AZUL], ['Média por dia produzido', dp ? prHoras(st.op / dp) : '–', AZUL]];
   const kw = (W - 2 * M - 9) / 4;
-  kp.forEach(([l, v, c], i) => { const x = M + i * (kw + 3); doc.setFillColor(244, 246, 248); doc.roundedRect(x, yy, kw, 22, 2, 2, 'F'); doc.setFillColor(...c); doc.rect(x, yy, 1.6, 22, 'F');
-    doc.setTextColor(...c); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(v, x + 5, yy + 11); doc.setTextColor(91, 105, 117); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.text(l, x + 5, yy + 17.5); });
-  yy += 30;
-  doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
-  doc.text(`${plural(st.reg, 'dia registrado', 'dias registrados')} de ${st.dias.length} · ${st.dOp} sem paradas · ${st.dParc} com paradas · ${st.dPar} parados${st.temTon ? ' · produção informada: ' + (Math.round(st.ton * 10) / 10).toLocaleString('pt-BR') + ' t' : ''}`, M, yy); yy += 8;
+  kp.forEach(([l, v, c], i) => { const x = M + i * (kw + 3); doc.setFillColor(...FUN); doc.roundedRect(x, y, kw, 24, 2.5, 2.5, 'F'); doc.setFillColor(...c); doc.roundedRect(x, y, kw, 2.2, 1, 1, 'F');
+    doc.setTextColor(...c); doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text(v, x + 5, y + 13); doc.setTextColor(...CIN); doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.text(l, x + 5, y + 19.5); });
+  y += 32;
+  /* barra produzidas x paradas */
+  const tot = st.op + st.pa;
+  if (tot > 0){ const bw = W - 2 * M, wp = bw * st.op / tot;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(247, 131, 0); doc.text('HORAS PRODUZIDAS X HORAS PARADAS', M, y); y += 4;
+    doc.setFillColor(...VERDE); doc.roundedRect(M, y, Math.max(wp, 0.1), 9, 2, 2, 'F'); if (st.pa) { doc.setFillColor(...VERM); doc.roundedRect(M + wp, y, bw - wp, 9, 2, 2, 'F'); if (wp > 3) doc.rect(M + wp, y, 2, 9, 'F'); }
+    doc.setTextColor(255, 255, 255); doc.setFontSize(9); if (wp > 30) doc.text(`${prHoras(st.op)} · ${Math.round(st.op / tot * 100)}%`, M + 3, y + 6); if (bw - wp > 30) doc.text(`${prHoras(st.pa)} · ${Math.round(st.pa / tot * 100)}%`, M + bw - 3, y + 6, {align:'right'});
+    y += 16; }
+  /* motivos */
   const mots = Object.entries(st.mot).sort((a, b) => b[1] - a[1]);
-  if (mots.length){ doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(247, 131, 0); doc.text('MOTIVOS DE PARADA', M, yy); yy += 5; const mx = mots[0][1];
-    mots.forEach(([k, v]) => { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(27, 39, 51); doc.text(k, M, yy); doc.setFillColor(237, 240, 242); doc.roundedRect(M + 62, yy - 3, 90, 3.6, 1.5, 1.5, 'F'); doc.setFillColor(198, 47, 40); doc.roundedRect(M + 62, yy - 3, Math.max(2, 90 * v / mx), 3.6, 1.5, 1.5, 'F'); doc.setFont('helvetica', 'bold'); doc.text(prHoras(v), M + 157, yy); yy += 6; }); yy += 3; }
-  const cols = [['Dia', 16], ['Situação', 32], ['Produzido', 22], ['Parada', 16], ['Motivos, atividades e observações', 96]];
-  const head = () => { let x = M; doc.setFillColor(13, 56, 91); doc.rect(M, yy - 4.5, W - 2 * M, 6.5, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); cols.forEach(([t, w]) => { doc.text(t, x + 2, yy); x += w; }); yy += 6; };
+  if (mots.length){ doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(247, 131, 0); doc.text('MOTIVOS DAS HORAS PARADAS', M, y); y += 6; const mx = mots[0][1];
+    mots.forEach(([k, v]) => { if (y > 270){ doc.addPage(); y = 20; } doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...TXT); doc.text(doc.splitTextToSize(k, 70)[0], M, y);
+      doc.setFillColor(237, 240, 242); doc.roundedRect(M + 74, y - 3.2, 82, 4, 2, 2, 'F'); doc.setFillColor(...VERM); doc.roundedRect(M + 74, y - 3.2, Math.max(2, 82 * v / mx), 4, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold'); doc.text(prHoras(v), M + 160, y); doc.setFont('helvetica', 'normal'); doc.setTextColor(...CIN); doc.text(Math.round(v / st.pa * 100) + '%', W - M, y, {align:'right'}); y += 6.5; });
+    y += 3; }
+  /* equipamentos */
+  const eq = mots.filter(([k]) => k.startsWith('Equipamento danificado'));
+  if (eq.length){ if (y > 250){ doc.addPage(); y = 20; } doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(247, 131, 0); doc.text('EQUIPAMENTOS DANIFICADOS', M, y); y += 5;
+    let x = M; eq.forEach(([k, v]) => { const nome = k.split('·')[1] ? k.split('·')[1].trim() : k; const w = Math.max(30, doc.getTextWidth(nome) + 18);
+      if (x + w > W - M){ x = M; y += 13; } doc.setFillColor(253, 236, 234); doc.roundedRect(x, y, w, 10, 2, 2, 'F'); doc.setTextColor(...VERM); doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text(nome, x + 3, y + 4.2); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.text(prHoras(v) + ' parada', x + 3, y + 8.2); x += w + 3; });
+    y += 17; }
+  /* dia a dia com linha do tempo */
+  if (y > 230){ doc.addPage(); y = 20; }
+  const A = PR_H0 * 60, B = PR_H1 * 60, cx = [M, M + 19, M + 38, M + 56, M + 126];
+  const head = () => { doc.setFillColor(...AZUL); doc.rect(M, y - 4.5, W - 2 * M, 7, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.2);
+    ['Dia', 'Produzido', 'Parado', `Linha do tempo (${PR_H0}h às ${PR_H1}h)`, 'Motivos e atividades'].forEach((t, k) => doc.text(t, cx[k] + 2, y)); y += 6.5; };
   head();
   st.dias.forEach((id, i) => {
     const d = PR.dias[id], r = prResumo(d);
-    const det = d ? [d.avaliacao, d.dss && d.dss.feito ? 'DSS ' + (d.dss.hora || '') + (d.dss.tema ? ' (' + d.dss.tema + ')' : '') : '', Object.keys(r.mot).join(', '), (d.atividades || []).filter(a => a !== 'DSS').join(', '), d.obs].filter(Boolean).join(' · ') : 'Sem registro';
-    const ls = doc.splitTextToSize(det || '-', 92).slice(0, 3); const h = Math.max(6, ls.length * 3.8 + 2.4);
-    if (yy + h > 282){ doc.addPage(); yy = 18; head(); }
-    if (i % 2){ doc.setFillColor(244, 246, 248); doc.rect(M, yy - 3.8, W - 2 * M, h, 'F'); }
-    const cor = {op:[46, 139, 87], parcial:[199, 127, 0], parada:[198, 47, 40], sem:[150, 160, 168]}[r.sit];
-    doc.setFillColor(...cor); doc.rect(M, yy - 3.8, 1.2, h, 'F');
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(27, 39, 51);
-    let x = M; [fmtData(id).slice(0, 5), PR_SIT[r.sit], r.op ? prHoras(r.op) : '-', r.pa ? prHoras(r.pa) : '-'].forEach((v, k) => { if (k === 1){ doc.setTextColor(...cor); doc.setFont('helvetica', 'bold'); } doc.text(v, x + 2, yy); doc.setTextColor(27, 39, 51); doc.setFont('helvetica', 'normal'); x += cols[k][1]; });
-    ls.forEach((l, j) => doc.text(l, x + 2, yy + j * 3.8)); yy += h;
+    const det = d ? [Object.keys(r.mot).join(', '), d.avaliacao, d.dss && d.dss.feito ? 'DSS ' + (d.dss.hora || '') : '', (d.atividades || []).filter(a => a !== 'DSS').join(', '), d.obs].filter(Boolean).join(' · ') : 'Sem registro';
+    doc.setFontSize(7.8); const ls = doc.splitTextToSize(det, W - M - cx[4] - 3).slice(0, 3); const h = Math.max(7, ls.length * 3.4 + 3.2);
+    if (y + h > 284){ doc.addPage(); y = 18; head(); }
+    if (i % 2){ doc.setFillColor(...FUN); doc.rect(M, y - 4, W - 2 * M, h, 'F'); }
+    const sem = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][prD(id).getDay()];
+    doc.setTextColor(...TXT); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.text(`${sem} ${fmtData(id).slice(0, 5)}`, cx[0] + 2, y);
+    doc.setTextColor(...VERDE); doc.text(r.op ? prHoras(r.op) : '–', cx[1] + 2, y); doc.setTextColor(...VERM); doc.text(r.pa ? prHoras(r.pa) : '–', cx[2] + 2, y);
+    const tx = cx[3] + 2, tw = cx[4] - cx[3] - 5; doc.setFillColor(230, 234, 238); doc.roundedRect(tx, y - 2.8, tw, 3.6, 1, 1, 'F');
+    ((d && d.periodos) || []).forEach(p => { const a = prMin(p.ini), b = prMin(p.fim); if (a == null || b == null || b <= a) return; const x0 = tx + tw * Math.max(0, a - A) / (B - A), x1 = tx + tw * Math.min(B - A, b - A) / (B - A); if (x1 <= x0) return; doc.setFillColor(...(p.tipo === 'parada' ? VERM : VERDE)); doc.rect(x0, y - 2.8, x1 - x0, 3.6, 'F'); });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(...TXT); ls.forEach((l, j) => doc.text(l, cx[4] + 2, y + j * 3.4)); y += h;
   });
+  doc.setFontSize(7.5); doc.setTextColor(...CIN); y += 2; if (y < 286){ doc.setFillColor(...VERDE); doc.rect(M, y - 2.5, 3, 3, 'F'); doc.text('Produzindo', M + 4.5, y); doc.setFillColor(...VERM); doc.rect(M + 24, y - 2.5, 3, 3, 'F'); doc.text('Parada', M + 28.5, y); }
+  /* evidências */
   const comFoto = st.dias.filter(id => PR.dias[id] && (PR.dias[id].fotos || []).length);
-  if (comFoto.length){ doc.addPage(); yy = 18; doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(13, 56, 91); doc.text('Evidências do período', M, yy); yy += 7;
+  if (comFoto.length){ doc.addPage(); y = 18; doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(...AZUL); doc.text('Evidências do período', M, y); y += 7;
     let col = 0; const fw = (W - 2 * M - 8) / 3, fh = fw * 0.75;
-    comFoto.forEach(id => (PR.dias[id].fotos || []).forEach(f => { if (yy + fh + 8 > 285){ doc.addPage(); yy = 18; col = 0; }
-      try { doc.addImage(f, 'JPEG', M + col * (fw + 4), yy, fw, fh); } catch {}
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(91, 105, 117); doc.text(fmtData(id) + ' · ' + PR_SIT[prResumo(PR.dias[id]).sit], M + col * (fw + 4), yy + fh + 4);
-      col++; if (col === 3){ col = 0; yy += fh + 9; } })); }
+    comFoto.forEach(id => (PR.dias[id].fotos || []).forEach(f => { if (y + fh + 8 > 285){ doc.addPage(); y = 18; col = 0; }
+      try { doc.addImage(f, 'JPEG', M + col * (fw + 4), y, fw, fh); } catch {}
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CIN); doc.text(`${fmtData(id)} · ${prHoras(prResumo(PR.dias[id]).op)} produzidas`, M + col * (fw + 4), y + fh + 4);
+      col++; if (col === 3){ col = 0; y += fh + 9; } })); }
+  const np = doc.getNumberOfPages(); for (let k = 1; k <= np; k++){ doc.setPage(k); doc.setFontSize(7.5); doc.setTextColor(...CIN); doc.text(`Concremat · Segurança do Trabalho · página ${k} de ${np}`, W / 2, 292, {align:'center'}); }
   return doc;
 }
 document.addEventListener('click', async e => {
